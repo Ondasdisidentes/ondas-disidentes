@@ -1,0 +1,147 @@
+@import "../theme.css";
+
+.admin{
+  min-height:100vh;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+}
+
+/* Encabezados del admin: misma Fixture Ultra del sitio público, pero en su
+   peso SemiBold en vez de Bold — a estos tamaños más chicos, el Bold se veía
+   demasiado pesado y costaba leerlo. Más grandes que el resto de la UI a propósito. */
+.admin__heading{font-family:var(--f-tit); font-weight:600; letter-spacing:.01em; text-transform:uppercase;}
+
+.admin__hd{
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:2px solid var(--ink);
+  padding:1rem clamp(.9rem,3vw,1.6rem);
+}
+.admin__hd h1{margin:0; font-size:2.4rem;}
+.admin__hd p{margin:.15rem 0 0; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); font-weight:700;}
+.admin__back{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700; text-decoration:underline; color:var(--mut);}
+.admin__back:hover{color:var(--indigo);}
+
+.admin__banner{
+  margin:1rem clamp(.9rem,3vw,1.6rem) 0;
+  border:2px solid var(--indigo);
+  background:var(--lav);
+  padding:.7rem 1rem;
+  font-size:.78rem;
+  font-weight:600;
+  line-height:1.5;
+}
+
+.admin__main{padding:clamp(.9rem,3vw,1.6rem);}
+.admin__section-hd{display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;}
+.admin__section-hd h2{margin:0; font-size:2.6rem;}
+
+.admin__btn{
+  display:inline-flex; align-items:center; gap:.5rem;
+  background:var(--indigo); color:var(--paper);
+  border:2px solid var(--indigo);
+  padding:.6rem 1.1rem;
+  font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  transition:.12s;
+}
+.admin__btn:hover{background:var(--lime); border-color:var(--ink); color:var(--ink);}
+.admin__btn:disabled{opacity:.4; cursor:not-allowed;}
+.admin__btn--ghost{background:transparent; color:var(--ink); border-color:var(--ink);}
+.admin__btn--ghost:hover{background:var(--ink); color:var(--paper);}
+
+.admin__grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem;}
+.admin__card{border:2px solid var(--ink); background:var(--paper-2); padding:1rem; box-shadow:5px 5px 0 var(--ink);}
+.admin__card--link{display:block; text-decoration:none; color:inherit; transition:.12s;}
+.admin__card--link:hover{background:var(--paper); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink);}
+.admin__card-hd{display:flex; gap:.75rem;}
+.admin__thumb{width:56px; height:56px; flex:none; position:relative; overflow:hidden; border:2px solid var(--ink);}
+.admin__card h3{margin:0; font-size:1.9rem; line-height:1.15;}
+.admin__card p{margin:.25rem 0 0; font-size:.78rem; color:var(--mut); line-height:1.4;}
+
+.admin__eplist{border-top:2px solid var(--ink); margin-top:.9rem; padding-top:.6rem; display:flex; flex-direction:column; gap:.3rem;}
+.admin__eplist-lbl{font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--mut); margin-bottom:.2rem;}
+.admin__eprow{display:flex; justify-content:space-between; gap:.5rem; font-size:.8rem;}
+.admin__eprow span:last-child{font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); flex:none;}
+
+.admin__form{border:2px solid var(--ink); background:var(--paper-2); padding:1.2rem; margin-bottom:1.5rem; box-shadow:6px 6px 0 var(--ink);}
+.admin__row{display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:1.2rem;}
+.admin__block{margin-bottom:1.2rem;}
+.admin__block-hd{display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem;}
+.admin__form-footer{display:flex; justify-content:flex-end;}
+.admin__field{display:block; margin-bottom:.7rem;}
+.admin__field > span{display:block; margin-bottom:.3rem; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--mut);}
+.admin__field input[type="text"],
+.admin__field input:not([type]),
+.admin__field input[type="url"],
+.admin__field textarea{
+  width:100%; border:2px solid var(--ink); background:var(--paper); color:var(--ink);
+  padding:.55rem .7rem; font:inherit; font-size:.85rem; resize:vertical;
+}
+.admin__field input:focus, .admin__field textarea:focus{outline:none; border-color:var(--indigo);}
+.admin__field input[type="file"]{
+  width:100%; font-size:.72rem; color:var(--mut);
+}
+.admin__field input[type="file"]::file-selector-button{
+  border:2px solid var(--ink); background:var(--paper); color:var(--ink);
+  padding:.4rem .7rem; margin-right:.7rem; font-size:.68rem; text-transform:uppercase; font-weight:700; cursor:pointer;
+}
+
+.admin__icons{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:.5rem;
+  max-height:14rem; overflow-y:auto; border:2px solid var(--ink); padding:.5rem; background:var(--paper);
+}
+.admin__icon{position:relative; aspect-ratio:1/1; border:2px solid var(--ink); overflow:hidden; transition:.12s;}
+.admin__icon:hover{border-color:var(--indigo);}
+.admin__icon[aria-pressed="true"]{outline:3px solid var(--indigo); outline-offset:-3px;}
+
+.admin__ep{border:2px solid var(--ink); padding:.9rem; margin-bottom:.8rem; background:var(--paper);}
+.admin__ep-hd{display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;}
+.admin__ep-hd span{font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--mut);}
+.admin__ep-remove{font-size:.62rem; letter-spacing:.05em; text-transform:uppercase; font-weight:700; color:var(--mut); text-decoration:underline;}
+.admin__ep-remove:hover{color:var(--indigo);}
+
+.admin__toggle{display:flex; gap:.5rem; margin-top:.3rem;}
+.admin__toggle button{
+  border:2px solid var(--ink); padding:.4rem .75rem; font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:var(--mut);
+}
+.admin__toggle button[aria-pressed="true"]{background:var(--indigo); color:var(--paper); border-color:var(--indigo);}
+
+.admin__hint{font-size:.68rem; color:var(--mut); align-self:center;}
+
+/* tabs — vista de edición de un programa existente */
+.admin__tabs{display:flex; gap:.4rem; margin-bottom:1rem;}
+.admin__tabs .admin__tab{
+  border:2px solid var(--ink); border-bottom:none; background:var(--paper);
+  padding:.6rem 1rem; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--mut);
+}
+.admin__tabs .admin__tab.is-active{background:var(--indigo); color:var(--paper); border-color:var(--indigo);}
+
+/* pasos — wizard de creación de programa */
+.admin__steps{display:flex; gap:0; margin-bottom:1rem; border:2px solid var(--ink);}
+.admin__step{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:.5rem;
+  padding:.7rem 1rem; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:var(--mut);
+  border-right:2px solid var(--ink);
+}
+.admin__step:last-child{border-right:none;}
+.admin__step span{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:1.4em; height:1.4em; border:2px solid currentColor; border-radius:50%; flex:none;
+}
+.admin__step.is-active{background:var(--indigo); color:var(--paper);}
+.admin__step:disabled{opacity:.5; cursor:not-allowed;}
+
+.admin__wizard-nav{display:flex; align-items:center; gap:.75rem; margin-top:1rem; padding-top:1rem; border-top:2px solid var(--ink);}
+
+/* lista de episodios (tab "Episodios" de un programa) */
+.admin__ep-list-empty{font-size:.85rem; color:var(--mut); padding:.5rem 0 0;}
+.admin__ep-list-row{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  border:2px solid var(--ink); background:var(--paper); padding:.8rem 1rem; margin-top:.6rem;
+}
+.admin__ep-list-row h4{margin:0; font-size:1.7rem;}
+.admin__ep-list-row p{margin:.2rem 0 0; font-size:.75rem; color:var(--mut);}
+.admin__ep-list-tag{
+  font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--mut);
+  border:2px solid var(--ink); padding:.3rem .6rem; flex:none;
+}

@@ -92,3 +92,30 @@ giss.tv responde con: host, puerto, nombre del mount point (termina en `.mp3`), 
 - Auto-hospedar Icecast en un VPS (Railway, Oracle Cloud) — descartado, se usa solo giss.tv.
 - AutoDJ / stream 24/7 — descartado, el stream solo existe en vivo.
 - Vite como framework de frontend — descartado en favor de Next.js, por las API routes integradas y el middleware de auth para el dashboard.
+
+## 9. Estado del frontend — migración del diseño (sin funcionalidad)
+
+El HTML base (`docs/ondas-disidentes-base.html`) ya está portado a `web/src/app/page.tsx` como componente único de React (una sola página, cambio de vista por estado — no rutas separadas, según se decidió). Incluye:
+
+- El sitio carga directo en la ventana de inicio (se quitó el gate/boot de entrada del diseño original). Menú, cambio entre las 3 ventanas (inicio/investigación/nosotrxs) y la consola de "programas" con interactividad real (estado de React).
+- Imágenes y el PDF del manifiesto, que en el HTML original estaban embebidos como base64, extraídos a archivos reales en `web/public/images/` y `web/public/docs/`.
+- Fuentes cargadas con `next/font/local` desde `web/public/fonts/` (ver `web/src/app/fonts.ts`) — esa carpeta está fuera de git (ver README, sección "Desarrollo local", para el paso manual de copiarlas).
+- Estilos portados casi sin cambios del CSS original (`web/src/app/ondas.css`, hoja global — no un CSS Module, porque Turbopack exige que todo selector de un CSS Module tenga una clase local, y este diseño depende de resets sobre `body`/`a`/`button`/`img`). Tailwind sigue disponible para el futuro dashboard, sin conflicto.
+
+**Deliberadamente NO conectado todavía** (statement explícito del alcance de esta fase, "sin funcionalidad"):
+- El stream en vivo real de giss.tv (el botón "Escuchar en vivo" solo cambia un estado visual local, no reproduce audio).
+- El polling de "sonando ahora" contra el status de Icecast.
+- El widget de SoundCloud que traía el HTML de referencia — se quitó por completo: no es parte de nuestra arquitectura (las grabaciones pasadas van por Supabase Storage, no SoundCloud).
+
+Contenido de episodios y equipo en `page.tsx` son **placeholders** (mismos textos del HTML de referencia) — pendiente de reemplazar por datos reales vía Supabase cuando se conecte el dashboard.
+
+El modelo de datos de programas/episodios vive en `web/src/lib/programas.ts` (tipos `Programa`/`Episodio` + contenido de ejemplo), compartido entre la vista pública y `/admin`. Un **Programa** (título, descripción, ícono, lista de episodios) puede tener varios **Episodios** (nombre, descripción, duración, contenido: archivo o link de SoundCloud). El dial de la consola de "programas" muestra los programas agrupados, con sus episodios anidados debajo de cada uno.
+
+## 10. Dashboard admin (`/admin`) — solo UI, sin login ni persistencia todavía
+
+- Ruta pública por ahora (sin proteger) — el login queda pendiente de conectar vía Supabase Auth (ver sección 4).
+- Lista de Programas (tarjeta con ícono, título, descripción y sus episodios) + botón "Agregar programa".
+- El formulario de "Agregar programa" permite: título, descripción, elegir un ícono de un selector visual (las ilustraciones de la marca, copiadas a `web/public/images/iconos/`), y agregar/quitar varios episodios dinámicamente (nombre, descripción, duración, y contenido — toggle entre subir un archivo o pegar un link de SoundCloud).
+- **Es solo una maqueta visual funcional dentro de la sesión**: los programas agregados aparecen en la lista de `/admin` mientras la pestaña sigue abierta, pero no se guardan (no hay `localStorage` ni Supabase todavía) y no se conectan al dial de la vista pública. Cuando se conecte Supabase, este formulario pasa a escribir en la tabla de programas/episodios real.
+- **Mismo lenguaje visual que el sitio público**: los tokens de marca (paleta + tipografías) se extrajeron a `web/src/app/theme.css`, compartido entre `ondas.css` (sitio público) y `web/src/app/admin/admin.css` (dashboard) — así el admin usa el mismo tema claro, colores e tipografía sin duplicar la definición de marca.
+- **Rutas**: `/admin` (lista, tarjetas clicables) → `/admin/programas/nuevo` (wizard de 2 pasos: datos del programa → episodios) y `/admin/programas/[id]` (vista de edición con 2 tabs: Editar programa / Episodios). El estado de los programas vive en un React Context (`programas-context.tsx`) compartido entre estas rutas durante la sesión — sigue sin persistir entre recargas ni conectarse al sitio público, pero dentro del admin sí es consistente (crear/editar se refleja en la lista al instante).

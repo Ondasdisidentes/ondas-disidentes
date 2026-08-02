@@ -11,3 +11,7 @@ Thumbs.db
 /assets/fuentes/
 /assets/plantillas/
 /assets/manual-de-marca.pdf
+
+# copia local de las mismas fuentes, usada por next/font/local en dev.
+# en producción se sirven desde Supabase Storage (pendiente de conectar).
+/web/public/fonts/

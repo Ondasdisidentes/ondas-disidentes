@@ -1,0 +1,27 @@
+/* Tokens de marca compartidos (paleta + tipografía del Manual de Marca) y
+   reseteos base reutilizables entre la vista pública (ondas.css) y /admin (admin.css). */
+
+:root{
+  --indigo:#4126D2;
+  --lav:#D7BDEF;
+  --lila:#B092D3;
+  --lime:#CECE06;
+  --paper:#ECECE1;
+  --ink:#2D2D2D;
+  --paper-2:#E4E4D7;
+  --mut:#75716a;
+  --f-disp: var(--font-humane), 'Arial Narrow', Impact, sans-serif;
+  --f-tit: var(--font-fixture-ultra), 'Arial Narrow', Impact, sans-serif;
+  --f-body: var(--font-konsens), Arial, Helvetica, sans-serif;
+}
+*{box-sizing:border-box;}
+a{color:inherit;}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; border-radius:0; padding:0;}
+img{display:block; user-select:none; -webkit-user-drag:none;}
+::selection{background:var(--indigo); color:var(--paper);}
+:focus-visible{outline:3px solid var(--indigo); outline-offset:2px;}
+.fix{font-family:var(--f-tit); font-weight:700; letter-spacing:.01em; text-transform:uppercase;}
+.hum{font-family:var(--f-disp); font-weight:700; letter-spacing:.005em; text-transform:uppercase;}
+.lbl{font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--mut); font-weight:700;}
+.hm{font-family:var(--f-disp); letter-spacing:.005em;}
+.fx{font-family:var(--f-tit); letter-spacing:.01em;}

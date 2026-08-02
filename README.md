@@ -6,6 +6,19 @@ Arquitectura completa y decisiones del proyecto: [docs/DOCUMENTO_MAESTRO.md](doc
 
 ## Desarrollo local
 
+Las fuentes de marca están fuera de git (licencia comercial), así que hay que copiarlas antes de levantar el sitio:
+
+```bash
+mkdir -p web/public/fonts
+cp assets/fuentes/Humane-Bold.otf web/public/fonts/
+cp assets/fuentes/Fixture-Ultra-Bold.otf web/public/fonts/FixtureUltra-Bold.otf
+cp assets/fuentes/Fixture-Ultra-SemiBold.otf web/public/fonts/FixtureUltra-SemiBold.otf
+cp assets/fuentes/Konsens/otf/KonsensRegular.otf web/public/fonts/Konsens-Regular.otf
+cp assets/fuentes/Konsens/otf/KonsensBold.otf web/public/fonts/Konsens-Bold.otf
+```
+
+Luego:
+
 ```bash
 cd web
 npm install
