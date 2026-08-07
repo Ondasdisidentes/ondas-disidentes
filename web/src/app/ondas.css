@@ -42,8 +42,7 @@
   .menu button:hover{background:var(--indigo); color:var(--paper);}
 
   .winwrap{flex:1; min-height:0; overflow:auto;}
-  .frame{max-width:1240px; margin:0 auto; min-height:100%; background:var(--paper); border-inline:2px solid var(--ink);}
-  @media (max-width:1260px){ .frame{border-inline:none;} }
+  .frame{min-height:100%; background:var(--paper);}
   .win{display:none;}
   .win.on{display:block;}
 
@@ -129,7 +128,7 @@
   .dlpdf__tx b{font-size:.82rem; letter-spacing:.06em; text-transform:uppercase;}
   .dlpdf__tx span{font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; opacity:.85;}
   .dlpdf--wide{margin:1.6rem 0 0; width:min(360px,92%); justify-content:flex-start;}
-  .manif__art{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; padding:1rem;}
+  .manif__art{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; padding:1rem; overflow:hidden;}
   .manif__tzc{position:absolute; pointer-events:none; z-index:0;}
   .manif__tzc--1{width:52%; top:-4%; left:-6%; transform:rotate(-8deg);}
   .manif__tzc--2{width:38%; bottom:-2%; right:-4%; transform:rotate(10deg);}
