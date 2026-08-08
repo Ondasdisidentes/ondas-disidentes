@@ -1,33 +1,43 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./admin.css";
-import { ProgramasProvider } from "./programas-context";
+import { createClient } from "@/lib/supabase/server";
+import { ADMIN_EMAIL } from "@/lib/data/auth";
+import { logout } from "./actions";
 
 export const metadata: Metadata = {
   title: "Panel de administración — Ondas Disidentes",
 };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const estaLogueado = Boolean(user && user.email === ADMIN_EMAIL);
+
   return (
-    <ProgramasProvider>
-      <div className="admin">
-        <header className="admin__hd">
-          <div>
-            <h1 className="admin__heading">Panel de administración</h1>
-            <p>Ondas Disidentes</p>
-          </div>
+    <div className="admin">
+      <header className="admin__hd">
+        <div>
+          <h1 className="admin__heading">Panel de administración</h1>
+          <p>Ondas Disidentes</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+          {estaLogueado && (
+            <form action={logout}>
+              <button type="submit" className="admin__logout">
+                Cerrar sesión ({user!.email})
+              </button>
+            </form>
+          )}
           <Link href="/" className="admin__back">
             ← Volver al sitio
           </Link>
-        </header>
-
-        <div className="admin__banner">
-          🔒 Esta sección requerirá inicio de sesión — todavía no hay login conectado. Los datos de esta
-          página son solo de demostración: no se guardan ni se conectan al sitio público.
         </div>
+      </header>
 
-        <main className="admin__main">{children}</main>
-      </div>
-    </ProgramasProvider>
+      <main className="admin__main">{children}</main>
+    </div>
   );
 }

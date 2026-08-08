@@ -107,6 +107,14 @@
 .admin__toggle button[aria-pressed="true"]{background:var(--indigo); color:var(--paper); border-color:var(--indigo);}
 
 .admin__hint{font-size:.68rem; color:var(--mut); align-self:center;}
+.admin__error{font-size:.72rem; font-weight:700; color:#b3261e; margin:.6rem 0 0;}
+
+.admin__logout{
+  background:none; border:none; padding:0; cursor:pointer;
+  font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  text-decoration:underline; color:var(--mut);
+}
+.admin__logout:hover{color:var(--indigo);}
 
 /* tabs — vista de edición de un programa existente */
 .admin__tabs{display:flex; gap:.4rem; margin-bottom:1rem;}

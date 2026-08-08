@@ -1,11 +1,11 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useProgramas } from "./programas-context";
+import { verifyAdminSession } from "@/lib/data/auth";
+import { getProgramas } from "@/lib/data/programas";
 
-export default function AdminProgramasPage() {
-  const { programas } = useProgramas();
+export default async function AdminProgramasPage() {
+  await verifyAdminSession();
+  const programas = await getProgramas();
 
   return (
     <>
