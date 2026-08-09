@@ -8,6 +8,8 @@ type FilaEpisodio = {
   descripcion: string;
   duracion: string;
   contenido: ContenidoEpisodio;
+  imagen_url: string | null;
+  created_at: string;
 };
 
 type FilaPrograma = {
@@ -25,6 +27,8 @@ function mapEpisodio(fila: FilaEpisodio): Episodio {
     descripcion: fila.descripcion,
     duracion: fila.duracion,
     contenido: fila.contenido,
+    imagenUrl: fila.imagen_url,
+    creadoEn: fila.created_at,
   };
 }
 
@@ -39,7 +43,7 @@ function mapPrograma(fila: FilaPrograma): Programa {
 }
 
 const SELECT_PROGRAMA_CON_EPISODIOS =
-  "id, titulo, descripcion, icono, episodios(id, nombre, descripcion, duracion, contenido, created_at)";
+  "id, titulo, descripcion, icono, episodios(id, nombre, descripcion, duracion, contenido, imagen_url, created_at)";
 
 export async function getProgramas(): Promise<Programa[]> {
   const supabase = await createClient();

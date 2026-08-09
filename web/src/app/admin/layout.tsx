@@ -4,6 +4,7 @@ import "./admin.css";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/data/auth";
 import { logout } from "./actions";
+import { AdminNav } from "./admin-nav";
 
 export const metadata: Metadata = {
   title: "Panel de administración — Ondas Disidentes",
@@ -36,6 +37,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
         </div>
       </header>
+
+      {estaLogueado && <AdminNav />}
 
       <main className="admin__main">{children}</main>
     </div>

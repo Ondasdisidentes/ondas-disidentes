@@ -13,6 +13,8 @@ export type Episodio = {
   descripcion: string;
   duracion: string;
   contenido: ContenidoEpisodio;
+  imagenUrl: string | null;
+  creadoEn: string;
 };
 
 export type Programa = {

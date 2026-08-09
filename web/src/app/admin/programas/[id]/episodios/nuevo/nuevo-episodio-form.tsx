@@ -71,6 +71,15 @@ export function NuevoEpisodioForm({
           />
         </label>
 
+        <label className="admin__field">
+          <span>Imagen del episodio (URL)</span>
+          <input
+            value={episodio.imagenUrl}
+            onChange={(e) => setEpisodio({ ...episodio, imagenUrl: e.target.value })}
+            placeholder="https://... (opcional — si se deja vacío se usa la portada por defecto)"
+          />
+        </label>
+
         <div className="admin__block">
           <span className="lbl">Contenido</span>
           <div className="admin__toggle">

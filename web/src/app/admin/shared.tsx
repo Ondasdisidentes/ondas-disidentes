@@ -17,6 +17,7 @@ export type EpisodioForm = {
   archivo: File | null;
   archivoActual: string;
   soundcloudUrl: string;
+  imagenUrl: string;
 };
 
 export function nuevoEpisodioForm(): EpisodioForm {
@@ -29,6 +30,7 @@ export function nuevoEpisodioForm(): EpisodioForm {
     archivo: null,
     archivoActual: "",
     soundcloudUrl: "",
+    imagenUrl: "",
   };
 }
 
@@ -42,6 +44,7 @@ export function episodioAForm(e: Episodio): EpisodioForm {
     archivo: null,
     archivoActual: e.contenido.tipo === "archivo" ? e.contenido.nombreArchivo : "",
     soundcloudUrl: e.contenido.tipo === "soundcloud" ? e.contenido.url : "",
+    imagenUrl: e.imagenUrl ?? "",
   };
 }
 
@@ -56,6 +59,8 @@ export function formAEpisodio(e: EpisodioForm): Episodio {
     descripcion: e.descripcion,
     duracion: e.duracion || "—",
     contenido,
+    imagenUrl: e.imagenUrl.trim() || null,
+    creadoEn: new Date().toISOString(),
   };
 }
 
@@ -198,6 +203,15 @@ function EpisodioFormRow(props: {
           onChange={(e) => onChange({ descripcion: e.target.value })}
           rows={2}
           placeholder="De qué trata este episodio"
+        />
+      </label>
+
+      <label className="admin__field">
+        <span>Imagen del episodio (URL)</span>
+        <input
+          value={episodio.imagenUrl}
+          onChange={(e) => onChange({ imagenUrl: e.target.value })}
+          placeholder="https://... (opcional — si se deja vacío se usa la portada por defecto)"
         />
       </label>
 

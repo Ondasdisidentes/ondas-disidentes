@@ -3,18 +3,16 @@
 import { useEffect, useState } from "react";
 import "./ondas.css";
 import type { Programa } from "@/lib/programas";
+import type { Panelista } from "@/lib/panelistas";
 
 function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-// Placeholder — pendiente de reemplazar por la tabla `panelistas` de Supabase.
-const TEAM = [
-  { name: "—", role: "Dirección", image: "/images/episode-01.webp" },
-  { name: "—", role: "Producción", image: "/images/episode-02.webp" },
-  { name: "—", role: "Locución", image: "/images/episode-03.webp" },
-  { name: "—", role: "Comunidad", image: "/images/team-comunidad.webp" },
-];
+function truncar(texto: string, max: number) {
+  if (texto.length <= max) return texto;
+  return texto.slice(0, max).trimEnd() + "…";
+}
 
 type Mode = "home" | "prog";
 type WinName = "inicio" | "invest" | "nosotrxs";
@@ -67,7 +65,13 @@ function useLiveStatus() {
   return live;
 }
 
-export default function HomeClient({ programas }: { programas: Programa[] }) {
+export default function HomeClient({
+  programas,
+  panelistas,
+}: {
+  programas: Programa[];
+  panelistas: Panelista[];
+}) {
   const [mode, setMode] = useState<Mode>("home");
   const [activeWin, setActiveWin] = useState<WinName>("inicio");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,6 +96,13 @@ export default function HomeClient({ programas }: { programas: Programa[] }) {
     setCurrentEpisodio(episodioIdx);
   }
 
+  function playEpisodio(programaIdx: number, episodioIdx: number) {
+    setCurrentPrograma(programaIdx);
+    setCurrentEpisodio(episodioIdx);
+    setMode("prog");
+    setIsPlaying(true);
+  }
+
   function stopAndGoHome() {
     setIsPlaying(false);
     setMode("home");
@@ -109,6 +120,19 @@ export default function HomeClient({ programas }: { programas: Programa[] }) {
 
   const programaActual = programas[currentPrograma] ?? programas[0];
   const episodioActual = programaActual.episodios[currentEpisodio] ?? programaActual.episodios[0];
+
+  const ultimosEpisodios = programas
+    .flatMap((p, programaIdx) =>
+      p.episodios.map((e, episodioIdx) => ({
+        programa: p,
+        programaIdx,
+        episodio: e,
+        episodioIdx,
+        numeroEnPrograma: episodioIdx + 1,
+      }))
+    )
+    .sort((a, b) => new Date(b.episodio.creadoEn).getTime() - new Date(a.episodio.creadoEn).getTime())
+    .slice(0, 3);
   const tickerText = (
     <>
       <span>La palabra de todxs vuela sin censura</span>
@@ -145,13 +169,39 @@ export default function HomeClient({ programas }: { programas: Programa[] }) {
             <span />
             <span />
           </button>
-          <nav className={cx("menu", menuOpen && "open")} id="menu" aria-label="Secciones">
+        </div>
+
+        <nav className={cx("menu", menuOpen && "open")} id="menu" aria-label="Secciones">
+          <div className={"menu__line"} aria-hidden="true" />
+          <div className={"menu__links"}>
             <button onClick={() => setWin("inicio")}>Inicio</button>
             <button onClick={() => { setMenuOpen(false); openPrograma(-1); }}>Programas</button>
             <button onClick={() => setWin("invest")}>Investigación</button>
             <button onClick={() => setWin("nosotrxs")}>Sobre nosotrxs</button>
-          </nav>
-        </div>
+          </div>
+          <div className={"menu__line"} aria-hidden="true" />
+          <div className={"menu__social"}>
+            <a href="#" aria-label="Instagram" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4.2" />
+                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+              </svg>
+            </a>
+            <a href="#" aria-label="Facebook" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M13.6 20.6v-6.9h2.3l.35-2.7h-2.65V9.2c0-.78.22-1.31 1.34-1.31h1.43V5.47a19 19 0 0 0-2.08-.1c-2.06 0-3.47 1.26-3.47 3.56v1.98H8.5v2.7h2.36v6.9" />
+              </svg>
+            </a>
+            <a href="#" aria-label="SoundCloud" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M7 17.5h9.5a3.3 3.3 0 0 0 .4-6.58 4.3 4.3 0 0 0-8.2-1.4A2.8 2.8 0 0 0 7 17.5Z" />
+                <path d="M9 12v5M11 10.5v6.5M13 11v6M5 14v3.5" strokeLinecap="round" />
+              </svg>
+            </a>
+          </div>
+        </nav>
 
         <div className={"winwrap"}>
           <div className={"frame"}>
@@ -191,41 +241,44 @@ export default function HomeClient({ programas }: { programas: Programa[] }) {
               </div>
 
               <div className={"seq"}>
-                <h2 className={"fix"}>
-                  <span className={"a"}>
-                    Últi<span className={"hm"}>mos</span>
-                  </span>{" "}
-                  progra<span className={"hm"}>mas</span>
-                </h2>
-                <img src="/images/heading-doodle.webp" alt="" aria-hidden="true" />
+                <img className={"seq__heading"} src="/images/ultimos-episodios-heading.png" alt="Últimos episodios" />
               </div>
 
-              <div className={"cards"}>
-                {programas.map((p, i) => (
-                  <article className={"card"} key={p.id}>
-                    <div className={cx("ph", "halftone")}>
-                      <span className={cx("no", "hum")}>{String(i + 1).padStart(2, "0")}</span>
-                      <img src={p.icono} alt="" />
-                    </div>
-                    <div className={"bd"}>
-                      <span className={"mt"}>{p.episodios.length} episodio{p.episodios.length === 1 ? "" : "s"}</span>
-                      <h3 className={cx("ti", "fix")}>
-                        <span className={cx("hm", "a")}>{p.titulo}</span>
-                      </h3>
-                      <p className={"ds"}>{p.descripcion}</p>
-                      <div className={"row"}>
-                        <button
-                          className={"pbtn"}
-                          aria-label={`Reproducir ${p.titulo}`}
-                          onClick={() => openPrograma(i)}
-                        >
-                          ►
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              {ultimosEpisodios.length > 0 && (
+                <>
+                  <div className={"eplist"}>
+                    {ultimosEpisodios.map(({ programa, programaIdx, episodio, episodioIdx, numeroEnPrograma }, i) => (
+                      <button
+                        type="button"
+                        className={"eprow"}
+                        key={episodio.id}
+                        aria-label={`Reproducir ${episodio.nombre}`}
+                        onClick={() => playEpisodio(programaIdx, episodioIdx)}
+                      >
+                        <span className={"eprow__label"}>{programa.titulo}</span>
+                        <span className={"eprow__row"}>
+                          <span className={"eprow__img"}>
+                            <img src={episodio.imagenUrl || "/images/portada-default.webp"} alt="" />
+                          </span>
+                          <span className={"eprow__body"}>
+                            <span className={"eprow__tags"}>
+                              <span className={"eprow__ep"}>Episodio {numeroEnPrograma}</span>
+                              {i === 0 && <span className={"eprow__new"}>Nuevo</span>}
+                            </span>
+                            <h3 className={cx("eprow__title", "fix")}>{episodio.nombre}</h3>
+                            <p className={"eprow__desc"}>{truncar(episodio.descripcion, 130)}</p>
+                          </span>
+                          <span className={"eprow__play"} aria-hidden="true">►</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button className={"eplist__all"} onClick={() => openPrograma(-1)}>
+                    Ver todos los episodios
+                  </button>
+                </>
+              )}
 
               <section className={"manif"} id="manifiesto">
                 <div>
@@ -383,28 +436,32 @@ export default function HomeClient({ programas }: { programas: Programa[] }) {
                 <img className={"mision__img"} src="/images/megafono.webp" alt="Megáfono" />
               </section>
 
-              <div className={"seq"}>
-                <h2 className={"fix"}>
-                  <span className={"a"}>El</span> equipo
-                </h2>
-                <img src="/images/heading-doodle.webp" alt="" aria-hidden="true" />
-              </div>
-              <div className={"teamgrid"}>
-                {TEAM.map((t, i) => (
-                  <article className={"tcard"} key={t.role}>
-                    <div className={cx("tphoto", "halftone")}>
-                      <img src={t.image} alt="" />
-                      <span className={cx("tn", "hum")}>0{i + 1}</span>
-                    </div>
-                    <div className={"tbody"}>
-                      <h3 className={cx("tname", "fix")}>
-                        <span className={cx("hm", "a")}>{t.name}</span>
-                      </h3>
-                      <p className={"trole"}>{t.role}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              {panelistas.length > 0 && (
+                <>
+                  <div className={"seq"}>
+                    <h2 className={"fix"}>
+                      <span className={"a"}>El</span> equipo
+                    </h2>
+                    <img className={"seq__doodle"} src="/images/heading-doodle.webp" alt="" aria-hidden="true" />
+                  </div>
+                  <div className={"teamgrid"}>
+                    {panelistas.map((p, i) => (
+                      <article className={"tcard"} key={p.id}>
+                        <div className={cx("tphoto", "halftone")}>
+                          <img src={p.fotoUrl} alt="" />
+                          <span className={cx("tn", "hum")}>0{i + 1}</span>
+                        </div>
+                        <div className={"tbody"}>
+                          <h3 className={cx("tname", "fix")}>
+                            <span className={cx("hm", "a")}>{p.nombre}</span>
+                          </h3>
+                          <p className={"trole"}>{p.puesto}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className={"endline"}>Ondas Disidentes · Radio alternativa</div>
             </section>
