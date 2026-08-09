@@ -10,6 +10,7 @@
   --ink:#2D2D2D;
   --paper-2:#E4E4D7;
   --mut:#75716a;
+  --gutter: clamp(1.3rem,3.5vw,2.6rem);
   --f-disp: var(--font-humane), 'Arial Narrow', Impact, sans-serif;
   --f-tit: var(--font-fixture-ultra), 'Arial Narrow', Impact, sans-serif;
   --f-body: var(--font-konsens), Arial, Helvetica, sans-serif;

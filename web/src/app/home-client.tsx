@@ -281,23 +281,21 @@ export default function HomeClient({
               )}
 
               <section className={"manif"} id="manifiesto">
+                <div className={"manif__banner"}>
+                  <img className={"manif__banner-bg"} src="/images/manifiesto-bg.webp" alt="" aria-hidden="true" />
+                  <img className={"manif__banner-title"} src="/images/manifiesto-titulo-banner.webp" alt="Manifiesto" />
+                </div>
                 <div>
-                  <h2 className={"fix"}>
-                    Man<span className={"hm"}>if</span>iesto
-                  </h2>
-                  <img className={"tz"} src="/images/manifiesto-doodle.webp" alt="" aria-hidden="true" />
+                  <h3 className={"manif__lead"}>Entendemos la comunicación como acción comunitaria.</h3>
                   <p>
-                    Ondas Disidentes nace desde <span className={"u"}>el común</span>: entendemos la
-                    comunicación no como transmisión, sino como acción comunitaria. Sucede en la proximidad,
-                    cuando hay cuerpos que se encuentran y una voz dice algo porque sabe que hay otras que
-                    escuchan.
+                    Trabajamos por una comunicación del común, medios comunitarios, proximidad y acción.
                   </p>
-                  <blockquote className={cx("manif__q", "fix")}>
-                    Por una comunicación del común: medios comunitarios, proximidad y acción.
-                  </blockquote>
-                  <p>
-                    Las voces históricamente silenciadas disputan quién establece las reglas del decir y hacen
-                    que la palabra vuele sin censura, desde lo común.
+                  <p className={"manif__body"}>
+                    Ondas Disidentes es una red de veinte radialistas comunitarias del Valle Alto y el Cercado
+                    de Cochabamba. Sostenemos una señal en línea permanente, en castellano y quechua, con
+                    programación producida íntegramente por mujeres desde sus propios barrios: derechos y
+                    acceso a la justicia, autonomía económica, migración interna, lenguas originarias, memoria
+                    de las pioneras de la radio y cobertura de la violencia machista desde una mirada feminista.
                   </p>
                   <p className={"credit"}>Con apoyo de</p>
                   <a
