@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./ondas.css";
 import type { Programa } from "@/lib/programas";
 import type { Panelista } from "@/lib/panelistas";
@@ -79,8 +79,19 @@ export default function HomeClient({
   const [currentEpisodio, setCurrentEpisodio] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const winwrapRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+
   const clock = useBoliviaClock();
   const isLive = useLiveStatus();
+
+  useEffect(() => {
+    winwrapRef.current?.scrollTo(0, 0);
+  }, [activeWin, mode]);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [currentPrograma, currentEpisodio, mode]);
 
   function openPrograma(i: number, autoplay?: boolean) {
     if (i >= 0) {
@@ -106,6 +117,13 @@ export default function HomeClient({
   function stopAndGoHome() {
     setIsPlaying(false);
     setMode("home");
+    setMenuOpen(false);
+  }
+
+  function goHome() {
+    setIsPlaying(false);
+    setMode("home");
+    setActiveWin("inicio");
     setMenuOpen(false);
   }
 
@@ -154,8 +172,8 @@ export default function HomeClient({
     <>
       {/* ============ HOME (ventanas) ============ */}
       <div id="home" style={{ display: mode === "home" ? "flex" : "none" }}>
-        <div className={"hbar"}>
-          <button className={cx("hbar__tag", "lbl")} onClick={() => openPrograma(-1)}>
+        <div className={cx("hbar", menuOpen && "hbar--dark")}>
+          <button className={cx("hbar__tag", "lbl")} onClick={goHome}>
             {isLive && "● En vivo · "}Radio alternativa
           </button>
           <button
@@ -181,29 +199,13 @@ export default function HomeClient({
           </div>
           <div className={"menu__line"} aria-hidden="true" />
           <div className={"menu__social"}>
-            <a href="#" aria-label="Instagram" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <rect x="3" y="3" width="18" height="18" rx="5" />
-                <circle cx="12" cy="12" r="4.2" />
-                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
-              </svg>
-            </a>
-            <a href="#" aria-label="Facebook" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M13.6 20.6v-6.9h2.3l.35-2.7h-2.65V9.2c0-.78.22-1.31 1.34-1.31h1.43V5.47a19 19 0 0 0-2.08-.1c-2.06 0-3.47 1.26-3.47 3.56v1.98H8.5v2.7h2.36v6.9" />
-              </svg>
-            </a>
-            <a href="#" aria-label="SoundCloud" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M7 17.5h9.5a3.3 3.3 0 0 0 .4-6.58 4.3 4.3 0 0 0-8.2-1.4A2.8 2.8 0 0 0 7 17.5Z" />
-                <path d="M9 12v5M11 10.5v6.5M13 11v6M5 14v3.5" strokeLinecap="round" />
-              </svg>
-            </a>
+            <span className={"menu__social-item"}>Instagram</span>
+            <span className={"menu__social-item"}>Facebook</span>
+            <span className={"menu__social-item"}>Soundcloud</span>
           </div>
         </nav>
 
-        <div className={"winwrap"}>
+        <div className={"winwrap"} ref={winwrapRef}>
           <div className={"frame"}>
             {/* ventana: INICIO */}
             <section className={cx("win", activeWin === "inicio" && "on")}>
@@ -285,7 +287,7 @@ export default function HomeClient({
                   <img className={"manif__banner-bg"} src="/images/manifiesto-bg.webp" alt="" aria-hidden="true" />
                   <img className={"manif__banner-title"} src="/images/manifiesto-titulo-banner.webp" alt="Manifiesto" />
                 </div>
-                <div>
+                <div className={"manif__text"}>
                   <h3 className={"manif__lead"}>Entendemos la comunicación como acción comunitaria.</h3>
                   <p>
                     Trabajamos por una comunicación del común, medios comunitarios, proximidad y acción.
@@ -297,6 +299,22 @@ export default function HomeClient({
                     acceso a la justicia, autonomía económica, migración interna, lenguas originarias, memoria
                     de las pioneras de la radio y cobertura de la violencia machista desde una mirada feminista.
                   </p>
+                  <div className={"manif__btns"}>
+                    <button
+                      type="button"
+                      className={cx("manif__btn", "manif__btn--solid")}
+                      onClick={() => setWin("nosotrxs")}
+                    >
+                      Sobre nosotrxs
+                    </button>
+                    <a
+                      className={cx("manif__btn", "manif__btn--outline")}
+                      href="/docs/manifiesto-ondas-disidentes.pdf"
+                      download="Manifiesto-Ondas-Disidentes.pdf"
+                    >
+                      Descarga el manifiesto
+                    </a>
+                  </div>
                   <p className={"credit"}>Con apoyo de</p>
                   <a
                     className={"supporter-logo"}
@@ -309,49 +327,27 @@ export default function HomeClient({
                   </a>
                 </div>
                 <div className={"manif__art"}>
-                  <img
-                    className={cx("manif__tzc", "manif__tzc--1")}
-                    src="/images/manifiesto-doodle-1.webp"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  <img
-                    className={cx("manif__tzc", "manif__tzc--2")}
-                    src="/images/manifiesto-doodle-2.webp"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  <div className={"manif__collage"}>
-                    <div className={cx("mc", "mc--big", "halftone")}>
-                      <img src="/images/megafono-principal.webp" alt="Radialista en la consola" />
-                    </div>
-                    <div className={cx("mc", "mc--sm", "halftone")}>
-                      <img src="/images/megafono.webp" alt="Megáfono" />
-                    </div>
-                    <div className={cx("mc", "mc--sm2", "halftone")}>
-                      <img src="/images/voz-al-aire.webp" alt="Voz al aire" />
-                    </div>
-                    <span className={cx("mc__tag", "fix")}>
-                      Comunicación
-                      <br />
-                      del común
-                    </span>
-                  </div>
-                  <a
-                    className={cx("dlpdf", "dlpdf--wide")}
-                    href="/docs/manifiesto-ondas-disidentes.pdf"
-                    download="Manifiesto-Ondas-Disidentes.pdf"
-                  >
-                    <span className={"dlpdf__ic"} aria-hidden="true">↓</span>
-                    <span className={"dlpdf__tx"}>
-                      <b>Descargar el manifiesto</b>
-                      <span>PDF · Ondas Disidentes</span>
-                    </span>
-                  </a>
+                  <img src="/images/manifiesto-art.webp" alt="Collage: micrófono, laptop y spotlight" />
                 </div>
+                <span className={"manif__line"} aria-hidden="true" />
               </section>
 
-              <div className={"endline"}>Ondas Disidentes · Radio alternativa</div>
+              <footer className={"sitefoot"}>
+                <img className={"sitefoot__logo"} src="/images/ondas-disidentes-logo-footer.png" alt="Ondas Disidentes" />
+                <div className={"sitefoot__cols"}>
+                  <div className={"sitefoot__col"}>
+                    <span className={"sitefoot__label"}>Contacto</span>
+                    <span className={"sitefoot__item"}>Email</span>
+                    <span className={"sitefoot__item"}>+591 67754287</span>
+                  </div>
+                  <div className={"sitefoot__col"}>
+                    <span className={"sitefoot__label"}>Redes sociales</span>
+                    <span className={"sitefoot__item"}>Instagram</span>
+                    <span className={"sitefoot__item"}>Facebook</span>
+                    <span className={"sitefoot__item"}>SoundCloud</span>
+                  </div>
+                </div>
+              </footer>
             </section>
 
             {/* ventana: INVESTIGACIÓN */}
@@ -434,6 +430,106 @@ export default function HomeClient({
                 <img className={"mision__img"} src="/images/megafono.webp" alt="Megáfono" />
               </section>
 
+              <section className={"ideario"}>
+                <article className={"ideario__block"}>
+                  <h3 className={cx("ideario__h", "fix")}>Misión</h3>
+                  <p>
+                    Ondas Disidentes forma, equipa y pone al aire a veinte radialistas comunitarias del Valle
+                    Alto y el Cercado de Cochabamba, Bolivia. Sostiene una emisión en línea permanente, en
+                    castellano y quechua, con programación producida íntegramente por mujeres desde sus propios
+                    barrios y comunidades: derechos y acceso a la justicia, autonomía económica, migración
+                    interna, lenguas originarias, memoria de las radialistas pioneras y cobertura de la
+                    violencia machista con perspectiva feminista. No emite publicidad comercial, no vende
+                    espacios y no responde a ninguna confesión religiosa ni organización partidaria.
+                  </p>
+                </article>
+
+                <article className={"ideario__block"}>
+                  <h3 className={cx("ideario__h", "fix")}>Visión</h3>
+                  <p>
+                    Al cabo de los veinticuatro meses del proyecto, una red autónoma de radialistas comunitarias
+                    feministas con equipo propio, archivo propio y una señal en línea sostenida por ellas
+                    mismas: línea editorial feminista estable, programación en lengua originaria y capacidad de
+                    seguir al aire después de que termine el financiamiento que la hizo posible.
+                  </p>
+                </article>
+
+                <article className={"ideario__block"}>
+                  <h3 className={cx("ideario__h", "fix")}>Objetivos de la señal en línea</h3>
+                  <p className={"ideario__intro"}>
+                    Específicos del servidor solicitado, derivados de los seis objetivos aprobados por el Fondo
+                    Apthapi Jopueti.
+                  </p>
+                  <ol className={"ideario__list"}>
+                    <li>
+                      Emitir de forma permanente las ocho producciones de la primera temporada de la red: cinco
+                      horas de estreno semanal más repeticiones, sobre una señal continua 24/7.
+                    </li>
+                    <li>
+                      Alcanzar a las audiencias del Valle Alto y de las comunidades periurbanas del Cercado que
+                      no cuentan con una emisora local de contenido propio. En la región hay 87 emisoras: tres
+                      están dirigidas por mujeres y ninguna tiene línea editorial feminista.
+                    </li>
+                    <li>
+                      Sostener una franja semanal íntegramente en quechua, con producción y conducción a cargo
+                      de hablantes nativas.
+                    </li>
+                    <li>
+                      Alojar y difundir el archivo sonoro de memoria de las radialistas pioneras de Cochabamba
+                      que el proyecto está recuperando.
+                    </li>
+                    <li>
+                      Servir de plataforma de práctica sin costo para las radialistas en formación, que no
+                      tienen acceso a espacio en el dial comercial.
+                    </li>
+                  </ol>
+                </article>
+
+                <article className={"ideario__block"}>
+                  <h3 className={cx("ideario__h", "fix")}>Objetivos aprobados por el fondo</h3>
+                  <p className={"ideario__intro"}>
+                    Proyecto financiado por la Fundación Apthapi Jopueti (Fondo de Mujeres Bolivia). Duración:
+                    24 meses.
+                  </p>
+                  <div className={"ideario__tablewrap"}>
+                    <table className={"ideario__table"}>
+                      <thead>
+                        <tr>
+                          <th>Nº</th>
+                          <th>Objetivo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>1</td>
+                          <td>Formación de radialistas feministas</td>
+                        </tr>
+                        <tr>
+                          <td>2</td>
+                          <td>Equipamiento para radialistas becadas</td>
+                        </tr>
+                        <tr>
+                          <td>3</td>
+                          <td>Producción radiofónica feminista</td>
+                        </tr>
+                        <tr>
+                          <td>4</td>
+                          <td>Recuperación de memoria histórica</td>
+                        </tr>
+                        <tr>
+                          <td>5</td>
+                          <td>Articulación y red territorial</td>
+                        </tr>
+                        <tr>
+                          <td>6</td>
+                          <td>Administración y gestión del proyecto</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+
               {panelistas.length > 0 && (
                 <>
                   <div className={"seq"}>
@@ -508,7 +604,7 @@ export default function HomeClient({
             </div>
           </aside>
 
-          <section className={"main"} tabIndex={-1}>
+          <section className={"main"} tabIndex={-1} ref={mainRef}>
             <div className={"panelhead"}>
               <div>
                 <div className={"meta"}>
