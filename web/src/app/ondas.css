@@ -1,9 +1,11 @@
   @import "./theme.css";
 
+  html{background:var(--paper); height:100%;}
   body{
     margin:0; background:var(--paper); color:var(--ink);
     font-family:var(--f-body);
     overflow:hidden;
+    height:100%;
     -webkit-font-smoothing:antialiased;
   }
   .ti .a{color:var(--indigo);}
