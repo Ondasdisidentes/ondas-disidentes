@@ -61,11 +61,13 @@ No se usa VPS propio ni AutoDJ: el stream **solo existe mientras el programa est
 
 ## 5. Modelo de datos en Supabase (borrador, a refinar al construir)
 
-- **Tabla `panelistas`**: nombre, bio, foto, redes sociales (campos exactos por confirmar al construir el dashboard).
-- **Tabla `horario`**: día, hora de inicio, hora de fin — vacía hasta que se defina el horario real.
-- **Storage bucket `grabaciones`**: archivos de audio de episodios pasados.
-- **Storage bucket `documentos`**: documentos varios subidos desde el dashboard.
-- **Auth**: usuarios admin del equipo (quiénes exactamente, por definir).
+- **Tabla `panelistas`**: nombre, puesto, foto (subida o ícono de marca) — implementada, ver `web/supabase/migrations/0003_panelistas.sql`.
+- **Tabla `programas` / `episodios`**: implementada, ver `web/supabase/migrations/0001_admin_schema.sql` y `0004_episodio_imagen.sql`.
+- **Tabla `configuracion_stream`**: fila única con `status_url`, `mount`, `stream_url` de giss.tv, editable desde `/admin/stream` — ver sección 6 y `web/supabase/migrations/0005_configuracion_stream.sql`.
+- **Tabla `horario`**: día, hora de inicio, hora de fin — vacía hasta que se defina el horario real. *Pendiente de crear.*
+- **Storage bucket `grabaciones`**: archivos de audio de episodios pasados. *Pendiente de crear.*
+- **Storage bucket `documentos`**: documentos varios subidos desde el dashboard. *Pendiente de crear.*
+- **Auth**: un solo admin (`ondasdisidentes@outlook.com`, ver `web/src/lib/data/auth.ts`) — implementada.
 
 ## 6. giss.tv — solicitud del mount point
 
@@ -76,16 +78,19 @@ Se pide por correo, explicando:
 
 giss.tv responde con: host, puerto, nombre del mount point (termina en `.mp3`), y contraseña de source — esos datos se cargan en BUTT.
 
+**Mount obtenido** (respuesta de GISS, ver correo): host `giss.tv`, puerto `8001` (HTTP) / `667` (HTTPS), mount `OndasDisidentes.mp3`, usuario `source`. La contraseña de source solo se carga en BUTT (u otro encoder), nunca en el sitio. Los datos públicos (status URL, mount, stream URL) están en la tabla `configuracion_stream` de Supabase, editable desde `/admin/stream` — ver sección 5 y 10.
+
 ---
 
 ## 7. Pendientes / próximos pasos antes de construir
 
-1. **Definir el horario de transmisión** (día(s) y hora(s)). Bloquea: el correo a giss.tv y el texto de "próxima transmisión" del sitio. — *Pendiente, sin dueño asignado aún.*
-2. Redactar la descripción de contenido de Ondas Disidentes para el correo a giss.tv.
-3. Enviar el correo a giss.tv solicitando el mount point.
+1. **Definir el horario de transmisión** (día(s) y hora(s)) y el texto de "próxima transmisión" del sitio. — *Pendiente, sin dueño asignado aún.*
+2. ~~Redactar la descripción de contenido de Ondas Disidentes para el correo a giss.tv.~~ — hecho.
+3. ~~Enviar el correo a giss.tv solicitando el mount point.~~ — hecho, mount obtenido (sección 6).
 4. Confirmar campos exactos de la tabla `panelistas`.
 5. Definir quiénes serán usuarios admin del dashboard.
 6. (No bloqueante) Evaluar dominio propio más adelante.
+7. Configurar BUTT en la compu del locutor con los datos de source de giss.tv (host/puerto/mount/contraseña) — el locutor necesita el mount point real, no lo publiques en un canal público.
 
 ## 8. Fuera de alcance / decisiones ya descartadas
 
@@ -103,19 +108,20 @@ El HTML base (`docs/ondas-disidentes-base.html`) ya está portado a `web/src/app
 - Estilos portados casi sin cambios del CSS original (`web/src/app/ondas.css`, hoja global — no un CSS Module, porque Turbopack exige que todo selector de un CSS Module tenga una clase local, y este diseño depende de resets sobre `body`/`a`/`button`/`img`). Tailwind sigue disponible para el futuro dashboard, sin conflicto.
 
 **Deliberadamente NO conectado todavía** (statement explícito del alcance de esta fase, "sin funcionalidad"):
-- El stream en vivo real de giss.tv (el botón "Escuchar en vivo" solo cambia un estado visual local, no reproduce audio).
-- El polling de "sonando ahora" contra el status de Icecast.
 - El widget de SoundCloud que traía el HTML de referencia — se quitó por completo: no es parte de nuestra arquitectura (las grabaciones pasadas van por Supabase Storage, no SoundCloud).
+- Reproducción on-demand de episodios pasados desde Supabase Storage (el dial de programas es solo navegación/metadata; el botón de reproducir usa el mismo `<audio>` que el stream en vivo, ver sección 6).
+
+**Ya conectado** (una vez obtenido el mount de giss.tv, ver sección 6): el stream en vivo real (`<audio>` apuntando a la `stream_url` de `configuracion_stream`) y el polling de estado contra `/api/icecast-status`, que lee `status_url`/`mount` de esa misma tabla del lado del servidor. La config es editable desde `/admin/stream` (sección 10) sin necesidad de redeploy.
 
 Contenido de episodios y equipo en `page.tsx` son **placeholders** (mismos textos del HTML de referencia) — pendiente de reemplazar por datos reales vía Supabase cuando se conecte el dashboard.
 
 El modelo de datos de programas/episodios vive en `web/src/lib/programas.ts` (tipos `Programa`/`Episodio` + contenido de ejemplo), compartido entre la vista pública y `/admin`. Un **Programa** (título, descripción, ícono, lista de episodios) puede tener varios **Episodios** (nombre, descripción, duración, contenido: archivo o link de SoundCloud). El dial de la consola de "programas" muestra los programas agrupados, con sus episodios anidados debajo de cada uno.
 
-## 10. Dashboard admin (`/admin`) — solo UI, sin login ni persistencia todavía
+## 10. Dashboard admin (`/admin`) — protegido, con persistencia real
 
-- Ruta pública por ahora (sin proteger) — el login queda pendiente de conectar vía Supabase Auth (ver sección 4).
-- Lista de Programas (tarjeta con ícono, título, descripción y sus episodios) + botón "Agregar programa".
-- El formulario de "Agregar programa" permite: título, descripción, elegir un ícono de un selector visual (las ilustraciones de la marca, copiadas a `web/public/images/iconos/`), y agregar/quitar varios episodios dinámicamente (nombre, descripción, duración, y contenido — toggle entre subir un archivo o pegar un link de SoundCloud).
-- **Es solo una maqueta visual funcional dentro de la sesión**: los programas agregados aparecen en la lista de `/admin` mientras la pestaña sigue abierta, pero no se guardan (no hay `localStorage` ni Supabase todavía) y no se conectan al dial de la vista pública. Cuando se conecte Supabase, este formulario pasa a escribir en la tabla de programas/episodios real.
+**Nota:** esta sección estaba escrita para una fase anterior, cuando `/admin` era solo una maqueta sin login ni Supabase. Ya no es así — quedó actualizada acá.
+
+- **Protegido en 3 capas** (patrón a reusar para cualquier feature nueva de admin): 1) `web/src/proxy.ts` — redirect optimista si no hay sesión; 2) `verifyAdminSession()` (`web/src/lib/data/auth.ts`) — re-chequea la sesión y el email exacto (`ondasdisidentes@outlook.com`) en cada page/Server Action; 3) policies RLS en Supabase — la capa innegociable, rechaza escrituras sin sesión válida aunque las otras dos fallaran.
+- **Secciones**: Programas (`/admin`, `/admin/programas/...`), Equipo (`/admin/equipo/...`), Transmisión (`/admin/stream` — configuración de giss.tv, ver sección 6).
+- Programas, episodios y panelistas se leen y escriben directo en Supabase (tablas `programas`/`episodios`/`panelistas`) vía Server Actions (`actions.ts`, `equipo-actions.ts`) — los cambios se reflejan al instante en el sitio público (`revalidatePath`).
 - **Mismo lenguaje visual que el sitio público**: los tokens de marca (paleta + tipografías) se extrajeron a `web/src/app/theme.css`, compartido entre `ondas.css` (sitio público) y `web/src/app/admin/admin.css` (dashboard) — así el admin usa el mismo tema claro, colores e tipografía sin duplicar la definición de marca.
-- **Rutas**: `/admin` (lista, tarjetas clicables) → `/admin/programas/nuevo` (wizard de 2 pasos: datos del programa → episodios) y `/admin/programas/[id]` (vista de edición con 2 tabs: Editar programa / Episodios). El estado de los programas vive en un React Context (`programas-context.tsx`) compartido entre estas rutas durante la sesión — sigue sin persistir entre recargas ni conectarse al sitio público, pero dentro del admin sí es consistente (crear/editar se refleja en la lista al instante).

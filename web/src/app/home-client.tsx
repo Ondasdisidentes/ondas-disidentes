@@ -14,6 +14,14 @@ function truncar(texto: string, max: number) {
   return texto.slice(0, max).trimEnd() + "…";
 }
 
+function formatearFecha(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}.${dd}.${d.getFullYear()}`;
+}
+
 type Mode = "home" | "prog";
 type WinName = "inicio" | "invest" | "nosotrxs";
 
@@ -44,13 +52,17 @@ function useBoliviaClock() {
 
 function useLiveStatus() {
   const [live, setLive] = useState(false);
+  const [streamUrl, setStreamUrl] = useState("");
   useEffect(() => {
     let cancelled = false;
     async function check() {
       try {
         const res = await fetch("/api/icecast-status", { cache: "no-store" });
         const data = await res.json();
-        if (!cancelled) setLive(Boolean(data.live));
+        if (!cancelled) {
+          setLive(Boolean(data.live));
+          if (typeof data.streamUrl === "string") setStreamUrl(data.streamUrl);
+        }
       } catch {
         if (!cancelled) setLive(false);
       }
@@ -62,7 +74,7 @@ function useLiveStatus() {
       clearInterval(id);
     };
   }, []);
-  return live;
+  return { live, streamUrl };
 }
 
 export default function HomeClient({
@@ -81,9 +93,20 @@ export default function HomeClient({
 
   const winwrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const clock = useBoliviaClock();
-  const isLive = useLiveStatus();
+  const { live: isLive, streamUrl } = useLiveStatus();
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (isPlaying) {
+      el.play().catch(() => setIsPlaying(false));
+    } else {
+      el.pause();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     winwrapRef.current?.scrollTo(0, 0);
@@ -170,6 +193,10 @@ export default function HomeClient({
 
   return (
     <>
+      {streamUrl && (
+        <audio ref={audioRef} src={streamUrl} preload="none" onError={() => setIsPlaying(false)} />
+      )}
+
       {/* ============ HOME (ventanas) ============ */}
       <div id="home" style={{ display: mode === "home" ? "flex" : "none" }}>
         <div className={cx("hbar", menuOpen && "hbar--dark")}>
@@ -260,7 +287,7 @@ export default function HomeClient({
                         <span className={"eprow__label"}>{programa.titulo}</span>
                         <span className={"eprow__row"}>
                           <span className={"eprow__img"}>
-                            <img src={episodio.imagenUrl || "/images/portada-default.webp"} alt="" />
+                            <img src={programa.icono} alt="" />
                           </span>
                           <span className={"eprow__body"}>
                             <span className={"eprow__tags"}>
@@ -565,81 +592,107 @@ export default function HomeClient({
 
       {/* ============ PROGRAMAS (consola) ============ */}
       <div id="prog" style={{ display: mode === "prog" ? "flex" : "none" }}>
-        <div className={"topbar"}>
-          <div className={"grp"}>
-            <button className={"back"} onClick={() => setMode("home")}>← Inicio</button>
-            <span className={"id"}>
-              <span className={"fix"} style={{ fontSize: "1rem" }}>Programas</span>
-              <span>Radio alternativa</span>
-            </span>
-          </div>
-          <div className={"clock"}>
-            En vivo · <time>{clock}</time> Bolivia
-          </div>
+        <div className={cx("hbar", menuOpen && "hbar--dark")}>
+          <button className={cx("hbar__tag", "lbl")} onClick={goHome}>
+            {isLive && "● En vivo · "}Radio alternativa
+          </button>
+          <button
+            className={"burger"}
+            aria-expanded={menuOpen}
+            aria-controls="menu-prog"
+            aria-label="Menú"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
         </div>
 
+        <nav className={cx("menu", menuOpen && "open")} id="menu-prog" aria-label="Secciones">
+          <div className={"menu__line"} aria-hidden="true" />
+          <div className={"menu__links"}>
+            <button onClick={goHome}>Inicio</button>
+            <button onClick={() => setMenuOpen(false)}>Programas</button>
+            <button onClick={() => { setMode("home"); setWin("invest"); }}>Investigación</button>
+            <button onClick={() => { setMode("home"); setWin("nosotrxs"); }}>Sobre nosotrxs</button>
+          </div>
+          <div className={"menu__line"} aria-hidden="true" />
+          <div className={"menu__social"}>
+            <span className={"menu__social-item"}>Instagram</span>
+            <span className={"menu__social-item"}>Facebook</span>
+            <span className={"menu__social-item"}>Soundcloud</span>
+          </div>
+        </nav>
+
         <div className={"body"}>
-          <aside className={"tuner"} aria-label="Dial de programas">
-            <div className={cx("hd", "lbl")}>Dial · Programas</div>
-            <div className={"tuner__list"}>
-              {programas.map((p, pi) => (
-                <div className={"freqgrp"} key={p.id}>
-                  <div className={"freqgrp__hd"}>
-                    <img src={p.icono} alt="" />
-                    <span>{p.titulo}</span>
-                  </div>
-                  {p.episodios.map((e, ei) => (
+          <aside className={"proglist"} aria-label="Dial de programas">
+            <h2 className={cx("proglist__h", "fix")}>Programas</h2>
+            <div className={"proglist__items"}>
+              {programas.map((p, pi) => {
+                const abierto = pi === currentPrograma;
+                const masNuevoIdx = p.episodios.reduce(
+                  (best, e, i, arr) => (new Date(e.creadoEn) > new Date(arr[best].creadoEn) ? i : best),
+                  0
+                );
+                return (
+                  <div className={cx("proglist__item", abierto && "is-open")} key={p.id}>
                     <button
-                      key={e.id}
-                      className={"freq"}
-                      aria-current={pi === currentPrograma && ei === currentEpisodio}
-                      onClick={() => selectEpisodio(pi, ei)}
+                      type="button"
+                      className={"proglist__hd"}
+                      aria-expanded={abierto}
+                      onClick={() => selectEpisodio(pi, abierto ? currentEpisodio : 0)}
                     >
-                      <span className={"no"}>{String(ei + 1).padStart(2, "0")}</span>
-                      <span className={"tt"}>{e.nombre}</span>
+                      <span className={"proglist__no"}>{String(pi + 1).padStart(2, "0")}</span>
+                      <span className={cx("proglist__title", "fix")}>{p.titulo}</span>
+                      {abierto && (
+                        <>
+                          <span className={"proglist__thumb"}>
+                            <img src={p.icono} alt="" />
+                          </span>
+                          <span className={"proglist__chev"} aria-hidden="true">⌄</span>
+                        </>
+                      )}
                     </button>
-                  ))}
-                </div>
-              ))}
+                    {abierto && (
+                      <div className={"proglist__eps"}>
+                        {p.episodios.map((e, ei) => {
+                          const enVivo = abierto && ei === currentEpisodio && isPlaying;
+                          const esNuevo = !enVivo && ei === masNuevoIdx;
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              className={"proglist__ep"}
+                              aria-current={pi === currentPrograma && ei === currentEpisodio}
+                              onClick={() => selectEpisodio(pi, ei)}
+                            >
+                              <span className={"proglist__epno"}>{String(ei + 1).padStart(2, "0")}</span>
+                              <span className={"proglist__eptt"}>{e.nombre}</span>
+                              {enVivo && <span className={cx("proglist__eptag", "proglist__eptag--live")}>En vivo</span>}
+                              {esNuevo && <span className={cx("proglist__eptag", "proglist__eptag--new")}>Nuevo</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </aside>
 
-          <section className={"main"} tabIndex={-1} ref={mainRef}>
-            <div className={"panelhead"}>
-              <div>
-                <div className={"meta"}>
-                  <span>{programaActual.titulo}</span>
-                  <b>{episodioActual.duracion}</b>
-                </div>
-                <h2 className={"big"}>
-                  <span className={cx("hm", "a")}>{episodioActual.nombre}</span>
-                </h2>
-              </div>
-              <img className={"pimg"} src={programaActual.icono} alt="" />
+          <section className={"progmain"} tabIndex={-1} ref={mainRef}>
+            <img className={"progmain__photo"} src={programaActual.icono} alt="" />
+            <div className={"progmain__meta"}>
+              <span>Episodio {currentEpisodio + 1}</span>
+              <b>{episodioActual.duracion}</b>
             </div>
-            <p className={"desc"}>{episodioActual.descripcion}</p>
-
-            <div className={"live"}>
-              <div className={"live__hd"}>
-                <span className={"live__dot"} />
-                <span className={"lbl"}>En directo · Icecast</span>
-              </div>
-              <div className={"live__now"}>
-                <span className={"live__nowlbl"}>Sonando ahora</span>
-                <span className={"live__nowt"}>—</span>
-              </div>
-              <div className={"live__row"}>
-                <button
-                  className={cx("btn", "btn--solid")}
-                  onClick={() => setIsPlaying((v) => !v)}
-                >
-                  {isPlaying ? "‖ Detener en vivo" : "► Escuchar en vivo"}
-                </button>
-                <span className={"live__meta"}>
-                  Transmisión pendiente de conectar (giss.tv)
-                </span>
-              </div>
-            </div>
+            <h2 className={cx("progmain__title", "fix")}>
+              <span className={cx("hm", "a")}>{programaActual.titulo}</span>—{episodioActual.nombre}
+            </h2>
+            <p className={"progmain__date"}>{formatearFecha(episodioActual.creadoEn)}</p>
+            <p className={"progmain__desc"}>{episodioActual.descripcion}</p>
           </section>
         </div>
 

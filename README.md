@@ -25,6 +25,12 @@ npm install
 npm run dev
 ```
 
+### Configuración del stream (giss.tv)
+
+La URL de estado, el mount point y la URL pública del stream **no son variables de entorno**: viven en Supabase (tabla `configuracion_stream`, ver `web/supabase/migrations/0005_configuracion_stream.sql`) y se editan desde `/admin/stream` con sesión de admin. `/api/icecast-status` lee esa fila en cada request, así que un cambio en el admin aplica al toque, sin redeploy.
+
+La contraseña de *source* de giss.tv (la que transmite audio hacia el servidor) no va en el sitio ni en esa tabla: solo se usa en el programa del locutor (BUTT).
+
 ## Estructura
 
 - `docs/` — documentación y material de referencia.

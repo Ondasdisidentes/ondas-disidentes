@@ -17,7 +17,6 @@ type EpisodioInput = {
   descripcion: string;
   duracion: string;
   contenido: ContenidoEpisodio;
-  imagenUrl: string | null;
 };
 
 type ProgramaInput = {
@@ -60,7 +59,6 @@ export async function crearPrograma(input: ProgramaInput): Promise<ActionResult>
         descripcion: e.descripcion,
         duracion: e.duracion,
         contenido: e.contenido,
-        imagen_url: e.imagenUrl || null,
       }))
     );
     if (errorEpisodios) return { error: "El programa se creó, pero fallaron los episodios." };
@@ -106,7 +104,6 @@ export async function crearEpisodio(programaId: string, episodio: EpisodioInput)
     descripcion: episodio.descripcion,
     duracion: episodio.duracion,
     contenido: episodio.contenido,
-    imagen_url: episodio.imagenUrl || null,
   });
 
   if (error) return { error: "No se pudo crear el episodio." };
