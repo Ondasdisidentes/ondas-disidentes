@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/*
+  Safari 26 ignora theme-color y calcula el tinte de sus barras a partir del
+  background-color de elementos position:fixed/sticky cerca de los bordes del
+  viewport. Este sitio tiene varios contenedores fixed (#home, .menu, #prog)
+  que compiten entre sí y confunden ese muestreo. Estos dos elementos dan una
+  señal clara y sin ambigüedad en cada borde.
+*/
+.safari-edge-tint{
+  position: fixed;
+  left: 0;
+  width: 100%;
+  min-height: 12px;
+  background-color: #F4F4EF;
+  pointer-events: none;
+  z-index: -1;
+}
+.safari-edge-tint--top{ top: -8px; }
+.safari-edge-tint--bottom{ bottom: -8px; }

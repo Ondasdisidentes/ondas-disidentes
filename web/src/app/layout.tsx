@@ -23,7 +23,11 @@ export default function RootLayout({
       lang="es"
       className={`${humane.variable} ${fixtureUltra.variable} ${konsens.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <div className="safari-edge-tint safari-edge-tint--top" aria-hidden="true" />
+        <div className="safari-edge-tint safari-edge-tint--bottom" aria-hidden="true" />
+      </body>
     </html>
   );
 }
