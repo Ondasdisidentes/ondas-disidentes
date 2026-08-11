@@ -643,31 +643,33 @@ export default function HomeClient({
           </section>
         </div>
 
-        <div className={"transport"}>
-          <button
-            className={"tbtn"}
-            aria-label={isPlaying ? "Pausar transmisión" : "Reproducir en vivo"}
-            onClick={() => setIsPlaying((v) => !v)}
-          >
-            {isPlaying ? "‖" : "►"}
-          </button>
-          <button className={"tbtn"} aria-label="Detener y volver a inicio" onClick={stopAndGoHome}>■</button>
-          <div className={cx("nowair", !isPlaying && "off")}>
-            <span className={"sq"} aria-hidden="true" />
-            <span className={"t"}>
-              Al aire<b>{isPlaying ? "En vivo · Ondas Disidentes" : "—"}</b>
-            </span>
+        {mode === "prog" && (
+          <div className={"transport"}>
+            <button
+              className={"tbtn"}
+              aria-label={isPlaying ? "Pausar transmisión" : "Reproducir en vivo"}
+              onClick={() => setIsPlaying((v) => !v)}
+            >
+              {isPlaying ? "‖" : "►"}
+            </button>
+            <button className={"tbtn"} aria-label="Detener y volver a inicio" onClick={stopAndGoHome}>■</button>
+            <div className={cx("nowair", !isPlaying && "off")}>
+              <span className={"sq"} aria-hidden="true" />
+              <span className={"t"}>
+                Al aire<b>{isPlaying ? "En vivo · Ondas Disidentes" : "—"}</b>
+              </span>
+            </div>
+            <div className={cx("marq", !isPlaying && "paused")}>
+              <span className={"marq__t"}>
+                En vivo <i>●</i> Ondas Disidentes <i>●</i> Radio alternativa <i>●</i> En vivo <i>●</i> Ondas
+                Disidentes <i>●</i> Radio alternativa <i>●</i>
+              </span>
+            </div>
+            <div className={"tclock"}>
+              Señal · <time>{clock}</time>
+            </div>
           </div>
-          <div className={cx("marq", !isPlaying && "paused")}>
-            <span className={"marq__t"}>
-              En vivo <i>●</i> Ondas Disidentes <i>●</i> Radio alternativa <i>●</i> En vivo <i>●</i> Ondas
-              Disidentes <i>●</i> Radio alternativa <i>●</i>
-            </span>
-          </div>
-          <div className={"tclock"}>
-            Señal · <time>{clock}</time>
-          </div>
-        </div>
+        )}
       </div>
     </>
   );
