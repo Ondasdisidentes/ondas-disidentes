@@ -83,7 +83,7 @@
   .menu.open button:nth-child(4){transition-delay:.32s;}
   .menu button:hover{color:var(--lime);}
 
-  .winwrap{flex:1; min-height:0; overflow:auto;}
+  .winwrap{flex:1; min-height:0; overflow:auto; padding-bottom:env(safe-area-inset-bottom);}
   .frame{min-height:100%; background:var(--paper);}
   .win{display:none;}
   .win.on{display:block;}
@@ -341,7 +341,7 @@
   .freq[aria-current="true"] .no{color:var(--lime);}
   .freq[aria-current="true"] .tt{color:var(--paper);}
 
-  .main{min-width:0; overflow:auto; padding:clamp(1.1rem,3vw,2.2rem);}
+  .main{min-width:0; overflow:auto; padding:clamp(1.1rem,3vw,2.2rem); padding-bottom:calc(clamp(1.1rem,3vw,2.2rem) + env(safe-area-inset-bottom));}
   .panelhead{display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; border-bottom:2px solid var(--ink); padding-bottom:1rem; margin-bottom:1.1rem;}
   .panelhead .meta{display:flex; gap:.7rem; flex-wrap:wrap; font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--mut); margin-bottom:.4rem;}
   .panelhead .meta b{color:var(--indigo);}
