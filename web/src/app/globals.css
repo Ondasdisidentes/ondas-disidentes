@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 /*
-  Safari 26 ignora theme-color y calcula el tinte de sus barras a partir del
-  background-color de elementos position:fixed/sticky cerca de los bordes del
-  viewport. Este sitio tiene varios contenedores fixed (#home, .menu, #prog)
-  que compiten entre sí y confunden ese muestreo. Estos dos elementos dan una
-  señal clara y sin ambigüedad en cada borde.
+  Safari 26 ignora theme-color y tiñe sus barras con el color que encuentra en
+  los bordes del viewport. El shell del sitio es fijo (#home z-index:50,
+  #prog z-index:60) y en el borde inferior caen franjas lima (.hero__strip,
+  .ticker), así que la barra de URL salía amarilla.
+
+  Estas franjas de papel dan la señal de color. Solo funcionan si se pintan
+  POR ENCIMA del shell: con z-index bajo quedaban tapadas y Safari nunca las
+  veía. Se elevan solo en pantallas táctiles, donde el toolbar del navegador
+  cubre esos 4px de todos modos; en escritorio no deben tapar nada.
 */
 .safari-edge-tint{
   position: fixed;
@@ -18,3 +22,7 @@
 }
 .safari-edge-tint--top{ top: -8px; }
 .safari-edge-tint--bottom{ bottom: -8px; }
+
+@media (hover: none) and (pointer: coarse) {
+  .safari-edge-tint{ z-index: 2147483647; }
+}
