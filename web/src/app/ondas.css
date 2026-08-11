@@ -20,7 +20,7 @@
   @keyframes blink{50%{opacity:0;}}
 
   /* ================= HOME (ventanas) ================= */
-  #home{position:fixed; inset:0; z-index:50; background-color:transparent; background-image:linear-gradient(var(--paper), var(--paper)); flex-direction:column;}
+  #home{position:fixed; inset:0; z-index:50; background:var(--paper); flex-direction:column;}
 
   .hbar{
     flex:none; position:relative; z-index:8;
@@ -41,7 +41,7 @@
   .hbar--dark .burger:hover span{background:var(--lime);}
   .menu{
     position:fixed; inset:0; z-index:7;
-    background-color:transparent; background-image:linear-gradient(var(--ink), var(--ink)); color:var(--paper);
+    background:var(--ink); color:var(--paper);
     display:flex; flex-direction:column; align-items:stretch; justify-content:center;
     gap:clamp(1.1rem,3vw,1.8rem);
     padding:clamp(1.6rem,6vw,3.2rem);
@@ -314,7 +314,7 @@
   @media (max-width:460px){ .teamgrid{grid-template-columns:1fr;} .tcard{border-right:none;} }
 
   /* ================= PROGRAMAS (consola) ================= */
-  #prog{position:fixed; inset:0; z-index:60; background-color:transparent; background-image:linear-gradient(var(--paper), var(--paper)); flex-direction:column;}
+  #prog{position:fixed; inset:0; z-index:60; background:var(--paper); flex-direction:column;}
 
   .body{flex:1; min-height:0; display:grid; grid-template-columns:clamp(230px,26vw,320px) 1fr;}
 
