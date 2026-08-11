@@ -20,7 +20,7 @@
   @keyframes blink{50%{opacity:0;}}
 
   /* ================= HOME (ventanas) ================= */
-  #home{position:fixed; inset:0; z-index:50; background:var(--paper); flex-direction:column;}
+  #home{position:fixed; inset:0; z-index:50; background-color:transparent; background-image:linear-gradient(var(--paper), var(--paper)); flex-direction:column;}
 
   .hbar{
     flex:none; position:relative; z-index:8;
@@ -41,7 +41,7 @@
   .hbar--dark .burger:hover span{background:var(--lime);}
   .menu{
     position:fixed; inset:0; z-index:7;
-    background:var(--ink); color:var(--paper);
+    background-color:transparent; background-image:linear-gradient(var(--ink), var(--ink)); color:var(--paper);
     display:flex; flex-direction:column; align-items:stretch; justify-content:center;
     gap:clamp(1.1rem,3vw,1.8rem);
     padding:clamp(1.6rem,6vw,3.2rem);
@@ -314,7 +314,7 @@
   @media (max-width:460px){ .teamgrid{grid-template-columns:1fr;} .tcard{border-right:none;} }
 
   /* ================= PROGRAMAS (consola) ================= */
-  #prog{position:fixed; inset:0; z-index:60; background:var(--paper); flex-direction:column;}
+  #prog{position:fixed; inset:0; z-index:60; background-color:transparent; background-image:linear-gradient(var(--paper), var(--paper)); flex-direction:column;}
 
   .topbar{display:flex; justify-content:space-between; align-items:center; gap:1rem; border-bottom:2px solid var(--ink); padding:.55rem clamp(.7rem,2.5vw,1.4rem); background:var(--paper);}
   .topbar .grp{display:flex; align-items:center; gap:.9rem; min-width:0;}
@@ -371,7 +371,7 @@
   .scnote{margin:0 0 .5rem; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:var(--mut);}
   .scframe{width:100%; height:120px; border:2px solid var(--ink); display:block; background:var(--paper);}
 
-  .transport{display:flex; align-items:center; gap:.7rem; border-top:2px solid var(--ink); background:var(--lime); padding:.5rem clamp(.7rem,2.5vw,1.4rem); min-height:50px;}
+  .transport{display:flex; align-items:center; gap:.7rem; border-top:2px solid var(--ink); background-color:transparent; background-image:linear-gradient(var(--lime), var(--lime)); padding:.5rem clamp(.7rem,2.5vw,1.4rem); min-height:50px;}
   .tbtn{width:38px; height:32px; border:2px solid var(--ink); display:inline-flex; align-items:center; justify-content:center; font-size:.8rem; transition:.1s; flex:none; background:var(--paper);}
   .tbtn:hover{background:var(--ink); color:var(--lime);}
   .nowair{display:flex; align-items:center; gap:.5rem; flex:none; min-width:0;}

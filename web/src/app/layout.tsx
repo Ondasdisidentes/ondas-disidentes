@@ -23,9 +23,16 @@ export default function RootLayout({
       lang="es"
       className={`${humane.variable} ${fixtureUltra.variable} ${konsens.variable}`}
     >
+      <head>
+        <style>{`
+          .safari-edge-tint{position:fixed;left:0;width:100%;min-height:12px;background-color:#F4F4EF;pointer-events:none}
+          .safari-edge-tint--top{top:-8px}
+          .safari-edge-tint--bottom{bottom:-8px}
+        `}</style>
+      </head>
       <body>
-        {children}
         <div className="safari-edge-tint safari-edge-tint--top" aria-hidden="true" />
+        {children}
         <div className="safari-edge-tint safari-edge-tint--bottom" aria-hidden="true" />
       </body>
     </html>
