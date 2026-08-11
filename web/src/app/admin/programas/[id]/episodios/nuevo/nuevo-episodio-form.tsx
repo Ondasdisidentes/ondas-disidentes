@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { crearEpisodio } from "../../../../actions";
-import { formAEpisodio, nuevoEpisodioForm } from "../../../../shared";
+import { formAEpisodio, nuevoEpisodioForm, subirArchivoAudio } from "../../../../shared";
 
 export function NuevoEpisodioForm({
   programaId,
@@ -16,6 +16,22 @@ export function NuevoEpisodioForm({
   const [episodio, setEpisodio] = useState(nuevoEpisodioForm);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const [errorSubida, setErrorSubida] = useState<string | null>(null);
+
+  async function handleArchivo(archivo: File | null) {
+    setEpisodio((prev) => ({ ...prev, archivo, archivoUrl: "" }));
+    setErrorSubida(null);
+    if (!archivo) return;
+    setSubiendo(true);
+    const resultado = await subirArchivoAudio(archivo);
+    setSubiendo(false);
+    if ("error" in resultado) {
+      setErrorSubida(resultado.error);
+      return;
+    }
+    setEpisodio((prev) => ({ ...prev, archivoUrl: resultado.url }));
+  }
 
   async function handleCrear() {
     if (!episodio.nombre.trim()) return;
@@ -97,8 +113,14 @@ export function NuevoEpisodioForm({
                 type="file"
                 accept="audio/*"
                 name={groupName}
-                onChange={(e) => setEpisodio({ ...episodio, archivo: e.target.files?.[0] ?? null })}
+                disabled={subiendo}
+                onChange={(e) => handleArchivo(e.target.files?.[0] ?? null)}
               />
+              {subiendo && <span className="admin__hint">Subiendo audio…</span>}
+              {!subiendo && episodio.archivo && episodio.archivoUrl && (
+                <span className="admin__hint">Audio subido: {episodio.archivo.name}</span>
+              )}
+              {errorSubida && <span className="admin__error">{errorSubida}</span>}
             </label>
           ) : (
             <label className="admin__field" style={{ marginTop: ".5rem" }}>
@@ -116,7 +138,12 @@ export function NuevoEpisodioForm({
 
         <div className="admin__wizard-nav">
           <div style={{ flex: 1 }} />
-          <button type="button" onClick={handleCrear} disabled={!episodio.nombre.trim() || enviando} className="admin__btn">
+          <button
+            type="button"
+            onClick={handleCrear}
+            disabled={!episodio.nombre.trim() || enviando || subiendo}
+            className="admin__btn"
+          >
             {enviando ? "Creando…" : "Crear episodio"}
           </button>
         </div>

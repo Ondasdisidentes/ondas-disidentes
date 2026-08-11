@@ -1,8 +1,9 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import Image from "next/image";
 import { ICONOS_DISPONIBLES, type ContenidoEpisodio, type Episodio } from "@/lib/programas";
+import { subirAudioEpisodio } from "./actions";
 
 export function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -16,6 +17,7 @@ export type EpisodioForm = {
   tipoContenido: "archivo" | "soundcloud";
   archivo: File | null;
   archivoActual: string;
+  archivoUrl: string;
   soundcloudUrl: string;
 };
 
@@ -28,6 +30,7 @@ export function nuevoEpisodioForm(): EpisodioForm {
     tipoContenido: "archivo",
     archivo: null,
     archivoActual: "",
+    archivoUrl: "",
     soundcloudUrl: "",
   };
 }
@@ -41,14 +44,21 @@ export function episodioAForm(e: Episodio): EpisodioForm {
     tipoContenido: e.contenido.tipo,
     archivo: null,
     archivoActual: e.contenido.tipo === "archivo" ? e.contenido.nombreArchivo : "",
+    archivoUrl: e.contenido.tipo === "archivo" ? e.contenido.url : "",
     soundcloudUrl: e.contenido.tipo === "soundcloud" ? e.contenido.url : "",
   };
+}
+
+export async function subirArchivoAudio(archivo: File): Promise<{ url: string } | { error: string }> {
+  const formData = new FormData();
+  formData.set("archivo", archivo);
+  return subirAudioEpisodio(formData);
 }
 
 export function formAEpisodio(e: EpisodioForm): Episodio {
   const contenido: ContenidoEpisodio =
     e.tipoContenido === "archivo"
-      ? { tipo: "archivo", nombreArchivo: e.archivo?.name ?? e.archivoActual }
+      ? { tipo: "archivo", nombreArchivo: e.archivo?.name ?? e.archivoActual, url: e.archivoUrl }
       : { tipo: "soundcloud", url: e.soundcloudUrl };
   return {
     id: e.clave,
@@ -161,6 +171,22 @@ function EpisodioFormRow(props: {
 }) {
   const { index, episodio, onChange, onQuitar, puedeQuitar } = props;
   const groupName = useId();
+  const [subiendo, setSubiendo] = useState(false);
+  const [errorSubida, setErrorSubida] = useState<string | null>(null);
+
+  async function handleArchivo(archivo: File | null) {
+    onChange({ archivo, archivoUrl: "" });
+    setErrorSubida(null);
+    if (!archivo) return;
+    setSubiendo(true);
+    const resultado = await subirArchivoAudio(archivo);
+    setSubiendo(false);
+    if ("error" in resultado) {
+      setErrorSubida(resultado.error);
+      return;
+    }
+    onChange({ archivoUrl: resultado.url });
+  }
 
   return (
     <div className="admin__ep">
@@ -231,8 +257,14 @@ function EpisodioFormRow(props: {
               type="file"
               accept="audio/*"
               name={groupName}
-              onChange={(e) => onChange({ archivo: e.target.files?.[0] ?? null })}
+              disabled={subiendo}
+              onChange={(e) => handleArchivo(e.target.files?.[0] ?? null)}
             />
+            {subiendo && <span className="admin__hint">Subiendo audio…</span>}
+            {!subiendo && episodio.archivo && episodio.archivoUrl && (
+              <span className="admin__hint">Audio subido: {episodio.archivo.name}</span>
+            )}
+            {errorSubida && <span className="admin__error">{errorSubida}</span>}
           </label>
         ) : (
           <label className="admin__field" style={{ marginTop: ".5rem" }}>

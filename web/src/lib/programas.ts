@@ -4,7 +4,7 @@
 // y la lista estática de íconos disponibles.
 
 export type ContenidoEpisodio =
-  | { tipo: "archivo"; nombreArchivo: string }
+  | { tipo: "archivo"; nombreArchivo: string; url: string }
   | { tipo: "soundcloud"; url: string };
 
 export type Episodio = {
@@ -26,6 +26,7 @@ export type Programa = {
 
 // Ilustraciones disponibles para elegir como ícono de un programa (assets/ilustraciones).
 export const ICONOS_DISPONIBLES: string[] = [
+  "/images/portada-default.webp",
   "/images/episode-01.webp",
   "/images/episode-02.webp",
   "/images/episode-03.webp",

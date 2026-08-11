@@ -19,6 +19,43 @@ type EpisodioInput = {
   contenido: ContenidoEpisodio;
 };
 
+const BUCKET_AUDIO = "episodios-audio";
+const EXT_AUDIO_POR_MIME: Record<string, string> = {
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/ogg": "ogg",
+  "audio/mp4": "m4a",
+  "audio/x-m4a": "m4a",
+};
+const MAX_AUDIO_BYTES = 200 * 1024 * 1024;
+
+export async function subirAudioEpisodio(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  await verifyAdminSession();
+
+  const archivo = formData.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    return { error: "Elegí un archivo de audio." };
+  }
+
+  const ext = EXT_AUDIO_POR_MIME[archivo.type];
+  if (!ext) return { error: "El archivo debe ser MP3, WAV, OGG o M4A." };
+  if (archivo.size > MAX_AUDIO_BYTES) return { error: "El audio no puede pesar más de 200MB." };
+
+  const supabase = await createClient();
+  const nombreArchivo = `${crypto.randomUUID()}.${ext}`;
+  const { error: errorSubida } = await supabase.storage.from(BUCKET_AUDIO).upload(nombreArchivo, archivo, {
+    contentType: archivo.type,
+  });
+  if (errorSubida) return { error: "No se pudo subir el audio." };
+
+  const { data } = supabase.storage.from(BUCKET_AUDIO).getPublicUrl(nombreArchivo);
+  return { url: data.publicUrl };
+}
+
 type ProgramaInput = {
   titulo: string;
   descripcion: string;

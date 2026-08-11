@@ -14,40 +14,37 @@ function truncar(texto: string, max: number) {
   return texto.slice(0, max).trimEnd() + "…";
 }
 
+function soloPrimeraMayuscula(texto: string) {
+  if (!texto) return texto;
+  return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+}
+
+const UNA_SEMANA_MS = 7 * 24 * 60 * 60 * 1000;
+
+const MESES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
 function formatearFecha(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
-  return `${mm}.${dd}.${d.getFullYear()}`;
+  const mes = MESES[d.getMonth()];
+  return `${dd}-${mes.charAt(0).toUpperCase() + mes.slice(1)}-${d.getFullYear()}`;
 }
 
 type Mode = "home" | "prog";
 type WinName = "inicio" | "invest" | "nosotrxs";
+type Reproduccion =
+  | { tipo: "vivo" }
+  | { tipo: "grabacion"; programaIdx: number; episodioIdx: number };
 
-function useBoliviaClock() {
-  const [time, setTime] = useState("--:--:--");
-  useEffect(() => {
-    function fmt() {
-      try {
-        return new Intl.DateTimeFormat("es-BO", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-          timeZone: "America/La_Paz",
-        }).format(new Date());
-      } catch {
-        const d = new Date();
-        return [d.getHours(), d.getMinutes(), d.getSeconds()]
-          .map((x) => (x < 10 ? "0" + x : String(x)))
-          .join(":");
-      }
-    }
-    const id = setInterval(() => setTime(fmt()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return time;
+function formatearTiempo(segundos: number) {
+  const s = Math.max(0, Math.floor(segundos));
+  const mm = Math.floor(s / 60);
+  const ss = s % 60;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
 function useLiveStatus() {
@@ -89,24 +86,51 @@ export default function HomeClient({
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentPrograma, setCurrentPrograma] = useState(0);
   const [currentEpisodio, setCurrentEpisodio] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [descAbierta, setDescAbierta] = useState(false);
+  // Mobile: el panel "Programas" es un cajón que se desliza desde la
+  // izquierda por encima del detalle (que siempre está visible debajo).
+  const [progListaAbierta, setProgListaAbierta] = useState(false);
+
+  // Qué está sonando en la barra global — independiente de qué programa/
+  // episodio estás navegando en ese momento (currentPrograma/currentEpisodio
+  // son solo para lo que se muestra en la sección Programas).
+  const [reproduccion, setReproduccion] = useState<Reproduccion | null>(null);
+  const [reproduciendo, setReproduciendo] = useState(false);
+  const [recTiempo, setRecTiempo] = useState({ actual: 0, duracion: 0 });
+  const [vivoTiempo, setVivoTiempo] = useState(0);
 
   const winwrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const recAudioRef = useRef<HTMLAudioElement>(null);
 
-  const clock = useBoliviaClock();
   const { live: isLive, streamUrl } = useLiveStatus();
 
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (isPlaying) {
-      el.play().catch(() => setIsPlaying(false));
+    if (reproduccion?.tipo === "vivo" && reproduciendo) {
+      el.play().catch(() => setReproduciendo(false));
     } else {
       el.pause();
     }
-  }, [isPlaying]);
+  }, [reproduccion, reproduciendo]);
+
+  useEffect(() => {
+    const el = recAudioRef.current;
+    if (!el) return;
+    if (reproduccion?.tipo === "grabacion" && reproduciendo) {
+      el.play().catch(() => setReproduciendo(false));
+    } else {
+      el.pause();
+    }
+  }, [reproduccion, reproduciendo]);
+
+  useEffect(() => {
+    if (!(reproduccion?.tipo === "vivo" && reproduciendo)) return;
+    const id = setInterval(() => setVivoTiempo((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [reproduccion, reproduciendo]);
 
   useEffect(() => {
     winwrapRef.current?.scrollTo(0, 0);
@@ -116,35 +140,53 @@ export default function HomeClient({
     mainRef.current?.scrollTo(0, 0);
   }, [currentPrograma, currentEpisodio, mode]);
 
+  function reproducirEnVivo() {
+    setReproduccion({ tipo: "vivo" });
+    setReproduciendo(true);
+    setVivoTiempo(0);
+  }
+
+  function reproducirEpisodio(programaIdx: number, episodioIdx: number) {
+    setReproduccion({ tipo: "grabacion", programaIdx, episodioIdx });
+    setReproduciendo(true);
+    setRecTiempo({ actual: 0, duracion: 0 });
+  }
+
+  function cerrarReproductor() {
+    setReproduccion(null);
+    setReproduciendo(false);
+  }
+
   function openPrograma(i: number, autoplay?: boolean) {
     if (i >= 0) {
       setCurrentPrograma(i);
       setCurrentEpisodio(0);
+      setDescAbierta(false);
+    } else {
+      // Sin programa puntual: es el link "Programas" del menú, la intención
+      // es navegar el catálogo, así que en mobile abrimos el cajón directo.
+      setProgListaAbierta(true);
     }
     setMode("prog");
-    if (autoplay) setIsPlaying(true);
+    if (autoplay) reproducirEnVivo();
   }
 
   function selectEpisodio(programaIdx: number, episodioIdx: number) {
     setCurrentPrograma(programaIdx);
     setCurrentEpisodio(episodioIdx);
+    setDescAbierta(false);
   }
 
   function playEpisodio(programaIdx: number, episodioIdx: number) {
     setCurrentPrograma(programaIdx);
     setCurrentEpisodio(episodioIdx);
+    setDescAbierta(false);
     setMode("prog");
-    setIsPlaying(true);
-  }
-
-  function stopAndGoHome() {
-    setIsPlaying(false);
-    setMode("home");
-    setMenuOpen(false);
+    setProgListaAbierta(false);
+    reproducirEpisodio(programaIdx, episodioIdx);
   }
 
   function goHome() {
-    setIsPlaying(false);
     setMode("home");
     setActiveWin("inicio");
     setMenuOpen(false);
@@ -161,6 +203,19 @@ export default function HomeClient({
 
   const programaActual = programas[currentPrograma] ?? programas[0];
   const episodioActual = programaActual.episodios[currentEpisodio] ?? programaActual.episodios[0];
+
+  const programaReproduccion = reproduccion?.tipo === "grabacion" ? programas[reproduccion.programaIdx] : null;
+  const episodioReproduccion = programaReproduccion
+    ? programaReproduccion.episodios[(reproduccion as { episodioIdx: number }).episodioIdx]
+    : null;
+  const contenidoReproduccion = episodioReproduccion?.contenido ?? null;
+  const audioUrlReproduccion =
+    contenidoReproduccion?.tipo === "archivo" && contenidoReproduccion.url ? contenidoReproduccion.url : "";
+  const esteEpisodioReproduciendo =
+    reproduccion?.tipo === "grabacion" &&
+    reproduccion.programaIdx === currentPrograma &&
+    reproduccion.episodioIdx === currentEpisodio;
+  const recPct = recTiempo.duracion > 0 ? Math.min(100, (recTiempo.actual / recTiempo.duracion) * 100) : 0;
 
   const ultimosEpisodios = programas
     .flatMap((p, programaIdx) =>
@@ -194,7 +249,18 @@ export default function HomeClient({
   return (
     <>
       {streamUrl && (
-        <audio ref={audioRef} src={streamUrl} preload="none" onError={() => setIsPlaying(false)} />
+        <audio ref={audioRef} src={streamUrl} preload="none" onError={() => setReproduciendo(false)} />
+      )}
+      {audioUrlReproduccion && (
+        <audio
+          ref={recAudioRef}
+          src={audioUrlReproduccion}
+          preload="none"
+          onTimeUpdate={(e) => setRecTiempo((t) => ({ ...t, actual: e.currentTarget.currentTime }))}
+          onLoadedMetadata={(e) => setRecTiempo((t) => ({ ...t, duracion: e.currentTarget.duration || 0 }))}
+          onEnded={() => setReproduciendo(false)}
+          onError={() => setReproduciendo(false)}
+        />
       )}
 
       {/* ============ HOME (ventanas) ============ */}
@@ -221,7 +287,6 @@ export default function HomeClient({
           <div className={"menu__links"}>
             <button onClick={() => setWin("inicio")}>Inicio</button>
             <button onClick={() => { setMenuOpen(false); openPrograma(-1); }}>Programas</button>
-            <button onClick={() => setWin("invest")}>Investigación</button>
             <button onClick={() => setWin("nosotrxs")}>Sobre nosotrxs</button>
           </div>
           <div className={"menu__line"} aria-hidden="true" />
@@ -232,7 +297,7 @@ export default function HomeClient({
           </div>
         </nav>
 
-        <div className={"winwrap"} ref={winwrapRef}>
+        <div className={cx("winwrap", !!reproduccion && "winwrap--with-player")} ref={winwrapRef}>
           <div className={"frame"}>
             {/* ventana: INICIO */}
             <section className={cx("win", activeWin === "inicio" && "on")}>
@@ -614,7 +679,6 @@ export default function HomeClient({
           <div className={"menu__links"}>
             <button onClick={goHome}>Inicio</button>
             <button onClick={() => setMenuOpen(false)}>Programas</button>
-            <button onClick={() => { setMode("home"); setWin("invest"); }}>Investigación</button>
             <button onClick={() => { setMode("home"); setWin("nosotrxs"); }}>Sobre nosotrxs</button>
           </div>
           <div className={"menu__line"} aria-hidden="true" />
@@ -626,15 +690,19 @@ export default function HomeClient({
         </nav>
 
         <div className={"body"}>
-          <aside className={"proglist"} aria-label="Dial de programas">
-            <h2 className={cx("proglist__h", "fix")}>Programas</h2>
+          <div
+            className={cx("proglist__backdrop", progListaAbierta && "is-open")}
+            onClick={() => setProgListaAbierta(false)}
+            aria-hidden="true"
+          />
+          <aside
+            className={cx("proglist", progListaAbierta && "is-open")}
+            aria-label="Dial de programas"
+          >
+            <h2 className={cx("proglist__h", "hum")}>Programas</h2>
             <div className={"proglist__items"}>
               {programas.map((p, pi) => {
                 const abierto = pi === currentPrograma;
-                const masNuevoIdx = p.episodios.reduce(
-                  (best, e, i, arr) => (new Date(e.creadoEn) > new Date(arr[best].creadoEn) ? i : best),
-                  0
-                );
                 return (
                   <div className={cx("proglist__item", abierto && "is-open")} key={p.id}>
                     <button
@@ -644,7 +712,7 @@ export default function HomeClient({
                       onClick={() => selectEpisodio(pi, abierto ? currentEpisodio : 0)}
                     >
                       <span className={"proglist__no"}>{String(pi + 1).padStart(2, "0")}</span>
-                      <span className={cx("proglist__title", "fix")}>{p.titulo}</span>
+                      <span className={cx("proglist__title", "hum")}>{soloPrimeraMayuscula(p.titulo)}</span>
                       {abierto && (
                         <>
                           <span className={"proglist__thumb"}>
@@ -657,19 +725,30 @@ export default function HomeClient({
                     {abierto && (
                       <div className={"proglist__eps"}>
                         {p.episodios.map((e, ei) => {
-                          const enVivo = abierto && ei === currentEpisodio && isPlaying;
-                          const esNuevo = !enVivo && ei === masNuevoIdx;
+                          const reproduciendoEste =
+                            reproduccion?.tipo === "grabacion" &&
+                            reproduccion.programaIdx === pi &&
+                            reproduccion.episodioIdx === ei &&
+                            reproduciendo;
+                          const esNuevo =
+                            !reproduciendoEste && Date.now() - new Date(e.creadoEn).getTime() <= UNA_SEMANA_MS;
                           return (
                             <button
                               key={e.id}
                               type="button"
                               className={"proglist__ep"}
                               aria-current={pi === currentPrograma && ei === currentEpisodio}
-                              onClick={() => selectEpisodio(pi, ei)}
+                              onClick={() => {
+                                selectEpisodio(pi, ei);
+                                reproducirEpisodio(pi, ei);
+                                setProgListaAbierta(false);
+                              }}
                             >
                               <span className={"proglist__epno"}>{String(ei + 1).padStart(2, "0")}</span>
                               <span className={"proglist__eptt"}>{e.nombre}</span>
-                              {enVivo && <span className={cx("proglist__eptag", "proglist__eptag--live")}>En vivo</span>}
+                              {reproduciendoEste && (
+                                <span className={cx("proglist__eptag", "proglist__eptag--live")}>Reproduciendo</span>
+                              )}
                               {esNuevo && <span className={cx("proglist__eptag", "proglist__eptag--new")}>Nuevo</span>}
                             </button>
                           );
@@ -682,20 +761,154 @@ export default function HomeClient({
             </div>
           </aside>
 
-          <section className={"progmain"} tabIndex={-1} ref={mainRef}>
+          <section
+            className={cx("progmain", !!reproduccion && "progmain--with-player")}
+            tabIndex={-1}
+            ref={mainRef}
+          >
+            <button
+              type="button"
+              className={"progmain__menubtn"}
+              onClick={() => setProgListaAbierta(true)}
+            >
+              ☰ Programas
+            </button>
             <img className={"progmain__photo"} src={programaActual.icono} alt="" />
             <div className={"progmain__meta"}>
               <span>Episodio {currentEpisodio + 1}</span>
               <b>{episodioActual.duracion}</b>
+              <button
+                type="button"
+                className={"progmain__play"}
+                onClick={() =>
+                  esteEpisodioReproduciendo
+                    ? setReproduciendo((v) => !v)
+                    : reproducirEpisodio(currentPrograma, currentEpisodio)
+                }
+              >
+                {esteEpisodioReproduciendo && reproduciendo ? "‖ Pausar" : "► Reproducir"}
+              </button>
             </div>
-            <h2 className={cx("progmain__title", "fix")}>
-              <span className={cx("hm", "a")}>{programaActual.titulo}</span>—{episodioActual.nombre}
-            </h2>
+            <h2 className={cx("progmain__title", "fix")}>{soloPrimeraMayuscula(programaActual.titulo)}</h2>
             <p className={"progmain__date"}>{formatearFecha(episodioActual.creadoEn)}</p>
-            <p className={"progmain__desc"}>{episodioActual.descripcion}</p>
+            <p className={cx("progmain__desc", !descAbierta && "is-clamped")}>{episodioActual.descripcion}</p>
+            {episodioActual.descripcion.length > 180 && (
+              <button type="button" className={"progmain__more"} onClick={() => setDescAbierta((v) => !v)}>
+                {descAbierta ? "Leer menos" : "Leer más"}
+              </button>
+            )}
           </section>
         </div>
       </div>
+
+      {/* ============ REPRODUCTOR GLOBAL ============ */}
+      {reproduccion && (
+        <div className={"player"}>
+          {reproduccion.tipo === "vivo" ? (
+            <span className={cx("player__photo", "player__photo--vivo")}>
+              <img src="/images/icono-ondas.png" alt="" />
+            </span>
+          ) : (
+            <span className={"player__photo"}>
+              <img src={programaReproduccion?.icono} alt="" />
+            </span>
+          )}
+
+          <div className={"player__body"}>
+            <span className={"player__title"}>
+              <b className={"player__ep"}>
+                {reproduccion.tipo === "vivo" ? "En vivo" : soloPrimeraMayuscula(episodioReproduccion?.nombre ?? "")}
+              </b>
+              <span className={"player__prog"}>
+                {reproduccion.tipo === "vivo"
+                  ? "Ondas Disidentes"
+                  : soloPrimeraMayuscula(programaReproduccion?.titulo ?? "")}
+              </span>
+            </span>
+
+            {reproduccion.tipo === "vivo" ? (
+              <div className={"player__live"}>
+                <button
+                  type="button"
+                  className={"player__toggle"}
+                  onClick={() => setReproduciendo((v) => !v)}
+                  aria-label={reproduciendo ? "Pausar" : "Reproducir"}
+                >
+                  {reproduciendo ? "‖" : "►"}
+                </button>
+                <span className={cx("player__livedot", !reproduciendo && "off")} aria-hidden="true" />
+                <span className={"player__livelbl"}>En vivo</span>
+                <span className={"player__time"}>{formatearTiempo(vivoTiempo)}</span>
+              </div>
+            ) : contenidoReproduccion?.tipo === "soundcloud" ? (
+              <a className={"player__sc"} href={contenidoReproduccion.url} target="_blank" rel="noreferrer">
+                Escuchar en SoundCloud ↗
+              </a>
+            ) : audioUrlReproduccion ? (
+              <div className={"player__controls"}>
+                <button
+                  type="button"
+                  className={"player__skip"}
+                  aria-label="Retroceder 15 segundos"
+                  onClick={() => {
+                    const el = recAudioRef.current;
+                    if (el) el.currentTime = Math.max(0, el.currentTime - 15);
+                  }}
+                >
+                  «15
+                </button>
+                <button
+                  type="button"
+                  className={"player__toggle"}
+                  onClick={() => setReproduciendo((v) => !v)}
+                  aria-label={reproduciendo ? "Pausar" : "Reproducir"}
+                >
+                  {reproduciendo ? "‖" : "►"}
+                </button>
+                <button
+                  type="button"
+                  className={"player__skip"}
+                  aria-label="Adelantar 15 segundos"
+                  onClick={() => {
+                    const el = recAudioRef.current;
+                    if (el) el.currentTime = Math.min(recTiempo.duracion || el.duration || 0, el.currentTime + 15);
+                  }}
+                >
+                  15»
+                </button>
+                <span className={"player__time"}>{formatearTiempo(recTiempo.actual)}</span>
+                <input
+                  type="range"
+                  className={"player__seek"}
+                  min={0}
+                  max={recTiempo.duracion || 0}
+                  step={1}
+                  value={Math.min(recTiempo.actual, recTiempo.duracion || 0)}
+                  style={{ "--pct": `${recPct}%` } as React.CSSProperties}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setRecTiempo((t) => ({ ...t, actual: v }));
+                    if (recAudioRef.current) recAudioRef.current.currentTime = v;
+                  }}
+                  aria-label="Progreso del episodio"
+                />
+                <span className={"player__time"}>{formatearTiempo(recTiempo.duracion)}</span>
+              </div>
+            ) : (
+              <span className={"player__unavail"}>Audio no disponible todavía</span>
+            )}
+
+            <button
+              type="button"
+              className={"player__close"}
+              onClick={cerrarReproductor}
+              aria-label="Cerrar reproductor"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

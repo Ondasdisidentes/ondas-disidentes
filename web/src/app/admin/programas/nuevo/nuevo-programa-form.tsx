@@ -18,7 +18,7 @@ export function NuevoProgramaForm() {
   const [paso, setPaso] = useState<Paso>(1);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [icono, setIcono] = useState<string | null>(null);
+  const [icono, setIcono] = useState<string | null>("/images/portada-default.webp");
   const [episodiosForm, setEpisodiosForm] = useState<EpisodioForm[]>([nuevoEpisodioForm()]);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
