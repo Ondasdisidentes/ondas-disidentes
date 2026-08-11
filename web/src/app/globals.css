@@ -1,7 +1,31 @@
 @import "tailwindcss";
 
 /*
-  En iOS 26 la barra del navegador es traslúcida y toma su tinte del contenido
-  que queda debajo de ella. No se fuerza ningún color desde aquí: se deja que
-  muestre lo que realmente hay en la página.
+  Safari 26 ignora theme-color: sus barras se tiñen con lo que hay pintado en
+  los bordes del viewport. El shell del sitio es fijo (#home z-index:50,
+  #prog z-index:60) y en el borde inferior caen franjas lima (.hero__strip,
+  .ticker), así que la barra de URL salía amarilla.
+
+  Estas franjas dan la señal de color. Solo funcionan si se pintan POR ENCIMA
+  del shell: con z-index bajo quedaban tapadas y Safari nunca las veía. Se
+  elevan solo en pantallas táctiles, donde el toolbar del navegador cubre esos
+  4px de todos modos; en escritorio no deben tapar nada.
+
+  Abajo se usa el color de fondo del footer (--ink) y arriba el del header
+  (--paper). Van en hex literal a propósito: este bloque también se inyecta
+  inline en <head> y debe pintar en el primer render, antes de theme.css.
 */
+.safari-edge-tint{
+  position: fixed;
+  left: 0;
+  width: 100%;
+  min-height: 12px;
+  pointer-events: none;
+  z-index: -1;
+}
+.safari-edge-tint--top{ top: -8px; background-color: #F4F4EF; }
+.safari-edge-tint--bottom{ bottom: -8px; background-color: #2D2D2D; }
+
+@media (hover: none) and (pointer: coarse) {
+  .safari-edge-tint{ z-index: 2147483647; }
+}
