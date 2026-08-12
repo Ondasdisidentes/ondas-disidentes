@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./ondas.css";
 import type { Programa } from "@/lib/programas";
-import type { Panelista } from "@/lib/panelistas";
+import type { Radialista } from "@/lib/radialistas";
+import type { ContactoConfig } from "@/lib/data/contacto";
 
 function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -26,6 +27,17 @@ const MESES = [
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
 
+const EQUIPO = [
+  { nombre: "Fabiana Lobatón", rol: "Coordinación General" },
+  { nombre: "Brenda Villalba", rol: "Coordinación de Formación y Talleres" },
+  { nombre: "Fabricio Lobatón", rol: "Dirección Editorial e Investigación" },
+  { nombre: "Alejandra Góngora", rol: "Producción y Articulación Territorial" },
+  { nombre: "Camila Morato", rol: "Diseño UX/UI" },
+  { nombre: "Daniel Acero", rol: "Desarrollo Web" },
+  { nombre: "Nicolás Safos Canedo", rol: "Redes Sociales" },
+  { nombre: "Andrés Mayan", rol: "Redes Sociales" },
+];
+
 function formatearFecha(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -39,6 +51,17 @@ type WinName = "inicio" | "invest" | "nosotrxs";
 type Reproduccion =
   | { tipo: "vivo" }
   | { tipo: "grabacion"; programaIdx: number; episodioIdx: number };
+
+// Recuerda en qué sección se quedó el usuario (no qué está sonando: eso se
+// resetea en cada visita, como cualquier reproductor) para restaurarla si
+// recarga la página. Solo dura la pestaña/sesión — no localStorage.
+const NAV_STORAGE_KEY = "ondas-nav";
+type NavGuardada = {
+  mode: Mode;
+  activeWin: WinName;
+  currentPrograma: number;
+  currentEpisodio: number;
+};
 
 function formatearTiempo(segundos: number) {
   const s = Math.max(0, Math.floor(segundos));
@@ -76,11 +99,36 @@ function useLiveStatus() {
 
 export default function HomeClient({
   programas,
-  panelistas,
+  radialistas,
+  contacto,
 }: {
   programas: Programa[];
-  panelistas: Panelista[];
+  radialistas: Radialista[];
+  contacto: ContactoConfig;
 }) {
+  // Si el admin no cargó un dato en /admin/contacto, se muestra igual como
+  // placeholder (label genérica, opacidad reducida vía "is-disabled") en vez
+  // de ocultarlo, para que quede claro que ese hipervínculo no está
+  // disponible todavía.
+  const redesSociales: { label: string; href: string | null }[] = [
+    { label: "Instagram", href: contacto.instagram || null },
+    { label: "Facebook", href: contacto.facebook || null },
+    { label: "SoundCloud", href: contacto.soundcloud || null },
+  ];
+  const contactoItems: { label: string; href: string | null }[] = [
+    { label: contacto.email || "Email", href: contacto.email ? `mailto:${contacto.email}` : null },
+    {
+      label: contacto.telefono || "Teléfono",
+      href: contacto.telefono ? `tel:${contacto.telefono.replace(/[^\d+]/g, "")}` : null,
+    },
+  ];
+
+  // Arranca en false tanto en el servidor como en el primer render del
+  // cliente (tienen que coincidir para no romper la hidratación). Se pone en
+  // true recién cuando el layout effect de abajo ya restauró la sección
+  // guardada — así el primer pintado real ya sale en el lugar correcto, en
+  // vez de mostrar "Inicio" un instante y saltar.
+  const [hidratado, setHidratado] = useState(false);
   const [mode, setMode] = useState<Mode>("home");
   const [activeWin, setActiveWin] = useState<WinName>("inicio");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -105,6 +153,55 @@ export default function HomeClient({
   const recAudioRef = useRef<HTMLAudioElement>(null);
 
   const { live: isLive, streamUrl } = useLiveStatus();
+
+  // Restaura la sección donde se quedó el usuario antes de un refresh, y
+  // recién ahí habilita el render real (ver el guard de "!hidratado" más
+  // abajo). Va en layout effect para que corra antes del primer paint real
+  // del cliente, así ese primer paint ya sale en la sección correcta en vez
+  // de mostrar "Inicio" un instante y saltar.
+  //
+  // Restaurar desde sessionStorage al montar es el caso legítimo de
+  // sincronizar con un sistema externo — no se puede resolver con lazy
+  // initial state porque sessionStorage no existe en el render de servidor
+  // y usarlo ahí rompería la hidratación (el HTML del servidor no
+  // coincidiría con el del cliente).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useLayoutEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(NAV_STORAGE_KEY);
+      if (raw) {
+        const guardada = JSON.parse(raw) as Partial<NavGuardada>;
+        if (guardada.mode === "home" || guardada.mode === "prog") setMode(guardada.mode);
+        if (guardada.activeWin === "inicio" || guardada.activeWin === "invest" || guardada.activeWin === "nosotrxs") {
+          setActiveWin(guardada.activeWin);
+        }
+        const pi = guardada.currentPrograma;
+        if (typeof pi === "number" && pi >= 0 && pi < programas.length) {
+          setCurrentPrograma(pi);
+          const ei = guardada.currentEpisodio;
+          const episodios = programas[pi].episodios;
+          if (typeof ei === "number" && ei >= 0 && ei < episodios.length) setCurrentEpisodio(ei);
+        }
+      }
+    } catch {
+      // sessionStorage no disponible o dato corrupto: seguimos con los valores por defecto
+    } finally {
+      setHidratado(true);
+    }
+    // Solo al montar: es una restauración única, no una sincronización continua.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Guarda la sección actual para la próxima vez que se recargue.
+  useEffect(() => {
+    try {
+      const nav: NavGuardada = { mode, activeWin, currentPrograma, currentEpisodio };
+      sessionStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(nav));
+    } catch {
+      // Modo privado, cuota llena, etc. — no es crítico, se ignora.
+    }
+  }, [mode, activeWin, currentPrograma, currentEpisodio]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -197,6 +294,10 @@ export default function HomeClient({
     setMenuOpen(false);
   }
 
+  if (!hidratado) {
+    return <div style={{ position: "fixed", inset: 0, background: "var(--paper)" }} />;
+  }
+
   if (programas.length === 0) {
     return <p style={{ padding: "2rem" }}>No hay programas todavía.</p>;
   }
@@ -217,6 +318,16 @@ export default function HomeClient({
     reproduccion.episodioIdx === currentEpisodio;
   const recPct = recTiempo.duracion > 0 ? Math.min(100, (recTiempo.actual / recTiempo.duracion) * 100) : 0;
 
+  // En "Sobre nosotrxs" solo se muestran radialistas con un programa
+  // asignado — mientras no tengan uno, quedan cargadas en la base pero
+  // invisibles en el sitio público.
+  const radialistasConPrograma = radialistas
+    .map((r) => ({ radialista: r, programa: programas.find((p) => p.radialistaId === r.id) }))
+    .filter(
+      (x): x is { radialista: (typeof radialistas)[number]; programa: (typeof programas)[number] } =>
+        x.programa !== undefined
+    );
+
   const ultimosEpisodios = programas
     .flatMap((p, programaIdx) =>
       p.episodios.map((e, episodioIdx) => ({
@@ -229,22 +340,18 @@ export default function HomeClient({
     )
     .sort((a, b) => new Date(b.episodio.creadoEn).getTime() - new Date(a.episodio.creadoEn).getTime())
     .slice(0, 3);
-  const tickerText = (
-    <>
-      <span>La palabra de todxs vuela sin censura</span>
-      <i>●</i>
-      <span>La comunicación es un lugar de encuentro</span>
-      <i>●</i>
-      <span>Cuestionar las reglas del decir</span>
-      <i>●</i>
-      <span>La palabra de todxs vuela sin censura</span>
-      <i>●</i>
-      <span>La comunicación es un lugar de encuentro</span>
-      <i>●</i>
-      <span>Cuestionar las reglas del decir</span>
-      <i>●</i>
-    </>
-  );
+  // El loop de la franja lima mueve este bloque -50% de su propio ancho, así
+  // que el contenido tiene que ser exactamente dos mitades idénticas (si no,
+  // el punto donde vuelve a empezar se nota) — y cada mitad tiene que ser más
+  // ancha que la pantalla más ancha que vayamos a soportar, si no queda un
+  // hueco en blanco antes de completar la vuelta.
+  const TICKER_FRASES = ["Al aire por internet", "En castellano y en quechua."];
+  const TICKER_REPS_POR_MITAD = 7;
+  const tickerMitad = Array.from({ length: TICKER_REPS_POR_MITAD }, () => TICKER_FRASES).flat();
+  const tickerText = [...tickerMitad, ...tickerMitad].flatMap((frase, i) => [
+    <span key={`t${i}`}>{frase}</span>,
+    <i key={`b${i}`}>●</i>,
+  ]);
 
   return (
     <>
@@ -291,9 +398,23 @@ export default function HomeClient({
           </div>
           <div className={"menu__line"} aria-hidden="true" />
           <div className={"menu__social"}>
-            <span className={"menu__social-item"}>Instagram</span>
-            <span className={"menu__social-item"}>Facebook</span>
-            <span className={"menu__social-item"}>Soundcloud</span>
+            {redesSociales.map((r) =>
+              r.href ? (
+                <a
+                  key={r.label}
+                  className={"menu__social-item"}
+                  href={r.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {r.label}
+                </a>
+              ) : (
+                <span key={r.label} className={cx("menu__social-item", "is-disabled")}>
+                  {r.label}
+                </span>
+              )
+            )}
           </div>
         </nav>
 
@@ -307,12 +428,10 @@ export default function HomeClient({
 
               <section className={"hero"}>
                 <div className={"hero__left"}>
-                  <p className={"slogan"}>
-                    Las frecuencias también
-                    <br />
-                    son un bien común.
-                    <br />
-                    <span className={"u"}>Nosotrxs las disputamos.</span>
+                  <p className={"slogan"}>Somos una radio alternativa que da voz a radialistas comunitarias.</p>
+                  <p className={"hero__sub"}>
+                    Cada una hace su propio programa: elige el tema, la audiencia y el idioma, y lo produce, lo
+                    conduce y lo edita ella misma. Se escucha por internet, desde donde sea
                   </p>
                   <button className={"cta"} onClick={() => openPrograma(0, true)}>
                     <span aria-hidden="true">►</span>Escuchar ahora
@@ -429,14 +548,37 @@ export default function HomeClient({
                 <div className={"sitefoot__cols"}>
                   <div className={"sitefoot__col"}>
                     <span className={"sitefoot__label"}>Contacto</span>
-                    <span className={"sitefoot__item"}>Email</span>
-                    <span className={"sitefoot__item"}>+591 67754287</span>
+                    {contactoItems.map((c) =>
+                      c.href ? (
+                        <a key={c.label} className={"sitefoot__item"} href={c.href}>
+                          {c.label}
+                        </a>
+                      ) : (
+                        <span key={c.label} className={cx("sitefoot__item", "is-disabled")}>
+                          {c.label}
+                        </span>
+                      )
+                    )}
                   </div>
                   <div className={"sitefoot__col"}>
                     <span className={"sitefoot__label"}>Redes sociales</span>
-                    <span className={"sitefoot__item"}>Instagram</span>
-                    <span className={"sitefoot__item"}>Facebook</span>
-                    <span className={"sitefoot__item"}>SoundCloud</span>
+                    {redesSociales.map((r) =>
+                      r.href ? (
+                        <a
+                          key={r.label}
+                          className={"sitefoot__item"}
+                          href={r.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {r.label}
+                        </a>
+                      ) : (
+                        <span key={r.label} className={cx("sitefoot__item", "is-disabled")}>
+                          {r.label}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </footer>
@@ -496,160 +638,138 @@ export default function HomeClient({
 
             {/* ventana: SOBRE NOSOTRXS */}
             <section className={cx("win", activeWin === "nosotrxs" && "on")}>
-              <header className={"mast"}>
-                <h1 className={"fix"}>
-                  <span className={"hm"}>Sobre</span> nosotrxs
-                </h1>
-                <div className={"mast__rule"} aria-hidden="true" />
-              </header>
-
-              <section className={"mision"}>
-                <div className={"mision__txt"}>
-                  <span className={"lbl"}>Misión</span>
-                  <h2 className={"fix"}>
-                    <span className={cx("hm", "a")}>Comunicación</span> del común
+              <section className={"qsomos"}>
+                <div className={"qsomos__left"}>
+                  <img className={"qsomos__badge"} src="/images/que-somos-badge.webp" alt="Qué somos" />
+                  <h2 className={"qsomos__title"}>
+                    Una radio alternativa hecha por radialistas comunitarias
                   </h2>
-                  <p>
-                    Entendemos la comunicación no como transmisión, sino como un{" "}
-                    <span className={"u"}>lugar de encuentro</span>: sucede cuando hay cuerpos que se
-                    juntan y una voz dice algo porque sabe que hay otras que escuchan.
-                  </p>
-                  <p>
-                    Trabajamos para que las voces históricamente silenciadas cuestionen quién establece las
-                    reglas del decir, y para que la palabra vuele sin censura desde lo común.
+                  <p className={"qsomos__desc"}>
+                    Trabajan en sus barrios, sus mercados y sus comunidades, ya saben hacer radio, y acá
+                    tienen una señal donde poner al aire lo suyo.
                   </p>
                 </div>
-                <img className={"mision__img"} src="/images/megafono.webp" alt="Megáfono" />
+                <div className={"qsomos__right"}>
+                  <img
+                    className={"qsomos__photo"}
+                    src="/images/que-somos-foto.webp"
+                    alt="Radialistas de Ondas Disidentes conversando al aire, con micrófonos"
+                  />
+                </div>
+                <img
+                  className={"qsomos__icon"}
+                  src="/images/icono-ondas.png"
+                  alt=""
+                  aria-hidden="true"
+                />
               </section>
 
-              <section className={"ideario"}>
-                <article className={"ideario__block"}>
-                  <h3 className={cx("ideario__h", "fix")}>Misión</h3>
-                  <p>
-                    Ondas Disidentes forma, equipa y pone al aire a veinte radialistas comunitarias del Valle
-                    Alto y el Cercado de Cochabamba, Bolivia. Sostiene una emisión en línea permanente, en
-                    castellano y quechua, con programación producida íntegramente por mujeres desde sus propios
-                    barrios y comunidades: derechos y acceso a la justicia, autonomía económica, migración
-                    interna, lenguas originarias, memoria de las radialistas pioneras y cobertura de la
-                    violencia machista con perspectiva feminista. No emite publicidad comercial, no vende
-                    espacios y no responde a ninguna confesión religiosa ni organización partidaria.
+              <section className={"porque"}>
+                <img
+                  className={"porque__trazos"}
+                  src="/images/trazos-13.png"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <div className={"porque__left"}>
+                  <img className={"porque__badge"} src="/images/porque-badge.webp" alt="Por qué" />
+                  <h2 className={"porque__title"}>
+                    La mayoría de las emisoras de la región están dirigidas por hombres.
+                  </h2>
+                  <p className={"porque__desc"}>
+                    Y en casi todas las mujeres aparecen como tema y no como quien habla. Ondas
+                    Disidentes existe para cambiar eso.
                   </p>
-                </article>
-
-                <article className={"ideario__block"}>
-                  <h3 className={cx("ideario__h", "fix")}>Visión</h3>
-                  <p>
-                    Al cabo de los veinticuatro meses del proyecto, una red autónoma de radialistas comunitarias
-                    feministas con equipo propio, archivo propio y una señal en línea sostenida por ellas
-                    mismas: línea editorial feminista estable, programación en lengua originaria y capacidad de
-                    seguir al aire después de que termine el financiamiento que la hizo posible.
-                  </p>
-                </article>
-
-                <article className={"ideario__block"}>
-                  <h3 className={cx("ideario__h", "fix")}>Objetivos de la señal en línea</h3>
-                  <p className={"ideario__intro"}>
-                    Específicos del servidor solicitado, derivados de los seis objetivos aprobados por el Fondo
-                    Apthapi Jopueti.
-                  </p>
-                  <ol className={"ideario__list"}>
-                    <li>
-                      Emitir de forma permanente las ocho producciones de la primera temporada de la red: cinco
-                      horas de estreno semanal más repeticiones, sobre una señal continua 24/7.
-                    </li>
-                    <li>
-                      Alcanzar a las audiencias del Valle Alto y de las comunidades periurbanas del Cercado que
-                      no cuentan con una emisora local de contenido propio. En la región hay 87 emisoras: tres
-                      están dirigidas por mujeres y ninguna tiene línea editorial feminista.
-                    </li>
-                    <li>
-                      Sostener una franja semanal íntegramente en quechua, con producción y conducción a cargo
-                      de hablantes nativas.
-                    </li>
-                    <li>
-                      Alojar y difundir el archivo sonoro de memoria de las radialistas pioneras de Cochabamba
-                      que el proyecto está recuperando.
-                    </li>
-                    <li>
-                      Servir de plataforma de práctica sin costo para las radialistas en formación, que no
-                      tienen acceso a espacio en el dial comercial.
-                    </li>
-                  </ol>
-                </article>
-
-                <article className={"ideario__block"}>
-                  <h3 className={cx("ideario__h", "fix")}>Objetivos aprobados por el fondo</h3>
-                  <p className={"ideario__intro"}>
-                    Proyecto financiado por la Fundación Apthapi Jopueti (Fondo de Mujeres Bolivia). Duración:
-                    24 meses.
-                  </p>
-                  <div className={"ideario__tablewrap"}>
-                    <table className={"ideario__table"}>
-                      <thead>
-                        <tr>
-                          <th>Nº</th>
-                          <th>Objetivo</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>1</td>
-                          <td>Formación de radialistas feministas</td>
-                        </tr>
-                        <tr>
-                          <td>2</td>
-                          <td>Equipamiento para radialistas becadas</td>
-                        </tr>
-                        <tr>
-                          <td>3</td>
-                          <td>Producción radiofónica feminista</td>
-                        </tr>
-                        <tr>
-                          <td>4</td>
-                          <td>Recuperación de memoria histórica</td>
-                        </tr>
-                        <tr>
-                          <td>5</td>
-                          <td>Articulación y red territorial</td>
-                        </tr>
-                        <tr>
-                          <td>6</td>
-                          <td>Administración y gestión del proyecto</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
+                </div>
+                <div className={"porque__right"}>
+                  <img className={"porque__icon"} src="/images/porque-icono.webp" alt="" aria-hidden="true" />
+                </div>
               </section>
 
-              {panelistas.length > 0 && (
-                <>
-                  <div className={"seq"}>
-                    <h2 className={"fix"}>
-                      <span className={"a"}>El</span> equipo
-                    </h2>
-                    <img className={"seq__doodle"} src="/images/heading-doodle.webp" alt="" aria-hidden="true" />
-                  </div>
-                  <div className={"teamgrid"}>
-                    {panelistas.map((p, i) => (
-                      <article className={"tcard"} key={p.id}>
-                        <div className={cx("tphoto", "halftone")}>
-                          <img src={p.fotoUrl} alt="" />
-                          <span className={cx("tn", "hum")}>0{i + 1}</span>
-                        </div>
-                        <div className={"tbody"}>
-                          <h3 className={cx("tname", "fix")}>
-                            <span className={cx("hm", "a")}>{p.nombre}</span>
-                          </h3>
-                          <p className={"trole"}>{p.puesto}</p>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </>
+              <img className={"nosotrxs__wordmark"} src="/images/radialistxs.png" alt="Radialistxs" />
+
+              {radialistasConPrograma.length > 0 && (
+                <div className={"radgrid"}>
+                  {radialistasConPrograma.map(({ radialista: r, programa }) => (
+                    <article className={"radcard"} key={r.id}>
+                      <h3 className={"radcard__nombre"}>{r.nombre}</h3>
+                      <img className={"radcard__foto"} src={r.fotoUrl} alt="" />
+                      <p className={"radcard__localidad"}>Localidad de {r.localidad}</p>
+                      <div className={"radcard__prog"}>
+                        <h4 className={"radcard__progtitle"}>{programa.titulo}</h4>
+                        <p className={"radcard__progdesc"}>{programa.descripcion}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               )}
 
-              <div className={"endline"}>Ondas Disidentes · Radio alternativa</div>
+              <section className={"equipo"}>
+                <h2 className={cx("equipo__h", "hum")}>Equipo</h2>
+                <div className={"equipo__list"}>
+                  {EQUIPO.map((persona, i) => (
+                    <div className={"equipo__row"} key={persona.nombre}>
+                      <span className={"equipo__no"}>{String(i + 1).padStart(2, "0")}</span>
+                      <span className={"equipo__nombre"}>{persona.nombre}</span>
+                      <span className={"equipo__rol"}>{persona.rol}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={"equipo__foot"}>
+                  <div className={"equipo__foot-txt"}>
+                    <span className={"equipo__foot-lbl"}>Con el apoyo de</span>
+                    <p>
+                      Ondas Disidentes es una iniciativa del Colectivo Ñaña, con el apoyo de la Fundación
+                      Apthapi Jopueti, Fondo de Mujeres Bolivia.
+                    </p>
+                  </div>
+                  <img
+                    className={"equipo__foot-logo"}
+                    src="/images/logo-fondo-mujeres-bolivia.svg"
+                    alt="Fondo de Mujeres Bolivia · Apthapi Jopueti"
+                  />
+                </div>
+              </section>
+
+              <footer className={"sitefoot"}>
+                <img className={"sitefoot__logo"} src="/images/ondas-disidentes-logo-footer.png" alt="Ondas Disidentes" />
+                <div className={"sitefoot__cols"}>
+                  <div className={"sitefoot__col"}>
+                    <span className={"sitefoot__label"}>Contacto</span>
+                    {contactoItems.map((c) =>
+                      c.href ? (
+                        <a key={c.label} className={"sitefoot__item"} href={c.href}>
+                          {c.label}
+                        </a>
+                      ) : (
+                        <span key={c.label} className={cx("sitefoot__item", "is-disabled")}>
+                          {c.label}
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <div className={"sitefoot__col"}>
+                    <span className={"sitefoot__label"}>Redes sociales</span>
+                    {redesSociales.map((r) =>
+                      r.href ? (
+                        <a
+                          key={r.label}
+                          className={"sitefoot__item"}
+                          href={r.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {r.label}
+                        </a>
+                      ) : (
+                        <span key={r.label} className={cx("sitefoot__item", "is-disabled")}>
+                          {r.label}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              </footer>
             </section>
           </div>
         </div>
@@ -683,9 +803,23 @@ export default function HomeClient({
           </div>
           <div className={"menu__line"} aria-hidden="true" />
           <div className={"menu__social"}>
-            <span className={"menu__social-item"}>Instagram</span>
-            <span className={"menu__social-item"}>Facebook</span>
-            <span className={"menu__social-item"}>Soundcloud</span>
+            {redesSociales.map((r) =>
+              r.href ? (
+                <a
+                  key={r.label}
+                  className={"menu__social-item"}
+                  href={r.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {r.label}
+                </a>
+              ) : (
+                <span key={r.label} className={cx("menu__social-item", "is-disabled")}>
+                  {r.label}
+                </span>
+              )
+            )}
           </div>
         </nav>
 
@@ -711,19 +845,17 @@ export default function HomeClient({
                       aria-expanded={abierto}
                       onClick={() => selectEpisodio(pi, abierto ? currentEpisodio : 0)}
                     >
-                      <span className={"proglist__no"}>{String(pi + 1).padStart(2, "0")}</span>
+                      <span className={"proglist__thumb"}>
+                        <img src={p.icono} alt="" />
+                      </span>
                       <span className={cx("proglist__title", "hum")}>{soloPrimeraMayuscula(p.titulo)}</span>
-                      {abierto && (
-                        <>
-                          <span className={"proglist__thumb"}>
-                            <img src={p.icono} alt="" />
-                          </span>
-                          <span className={"proglist__chev"} aria-hidden="true">⌄</span>
-                        </>
-                      )}
+                      {abierto && <span className={"proglist__chev"} aria-hidden="true">⌄</span>}
                     </button>
                     {abierto && (
                       <div className={"proglist__eps"}>
+                        {p.episodios.length === 0 && (
+                          <p className={"proglist__epempty"}>Todavía no hay episodios.</p>
+                        )}
                         {p.episodios.map((e, ei) => {
                           const reproduciendoEste =
                             reproduccion?.tipo === "grabacion" &&
@@ -774,28 +906,36 @@ export default function HomeClient({
               ☰ Programas
             </button>
             <img className={"progmain__photo"} src={programaActual.icono} alt="" />
-            <div className={"progmain__meta"}>
-              <span>Episodio {currentEpisodio + 1}</span>
-              <b>{episodioActual.duracion}</b>
-              <button
-                type="button"
-                className={"progmain__play"}
-                onClick={() =>
-                  esteEpisodioReproduciendo
-                    ? setReproduciendo((v) => !v)
-                    : reproducirEpisodio(currentPrograma, currentEpisodio)
-                }
-              >
-                {esteEpisodioReproduciendo && reproduciendo ? "‖ Pausar" : "► Reproducir"}
-              </button>
-            </div>
-            <h2 className={cx("progmain__title", "fix")}>{soloPrimeraMayuscula(programaActual.titulo)}</h2>
-            <p className={"progmain__date"}>{formatearFecha(episodioActual.creadoEn)}</p>
-            <p className={cx("progmain__desc", !descAbierta && "is-clamped")}>{episodioActual.descripcion}</p>
-            {episodioActual.descripcion.length > 180 && (
-              <button type="button" className={"progmain__more"} onClick={() => setDescAbierta((v) => !v)}>
-                {descAbierta ? "Leer menos" : "Leer más"}
-              </button>
+            {episodioActual && (
+              <div className={"progmain__meta"}>
+                <span>Episodio {currentEpisodio + 1}</span>
+                <b>{episodioActual.duracion}</b>
+                <button
+                  type="button"
+                  className={"progmain__play"}
+                  onClick={() =>
+                    esteEpisodioReproduciendo
+                      ? setReproduciendo((v) => !v)
+                      : reproducirEpisodio(currentPrograma, currentEpisodio)
+                  }
+                >
+                  {esteEpisodioReproduciendo && reproduciendo ? "‖ Pausar" : "► Reproducir"}
+                </button>
+              </div>
+            )}
+            <h2 className={"progmain__title"}>{soloPrimeraMayuscula(programaActual.titulo)}</h2>
+            {episodioActual ? (
+              <>
+                <p className={"progmain__date"}>{formatearFecha(episodioActual.creadoEn)}</p>
+                <p className={cx("progmain__desc", !descAbierta && "is-clamped")}>{episodioActual.descripcion}</p>
+                {episodioActual.descripcion.length > 180 && (
+                  <button type="button" className={"progmain__more"} onClick={() => setDescAbierta((v) => !v)}>
+                    {descAbierta ? "Leer menos" : "Leer más"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className={"progmain__desc"}>Todavía no hay episodios publicados para este programa.</p>
             )}
           </section>
         </div>

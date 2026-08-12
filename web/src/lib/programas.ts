@@ -21,6 +21,8 @@ export type Programa = {
   titulo: string;
   descripcion: string;
   icono: string;
+  radialistaId: string;
+  radialistaNombre: string;
   episodios: Episodio[];
 };
 

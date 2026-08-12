@@ -73,11 +73,12 @@
 .admin__field input[type="text"],
 .admin__field input:not([type]),
 .admin__field input[type="url"],
-.admin__field textarea{
+.admin__field textarea,
+.admin__field select{
   width:100%; border:2px solid var(--ink); background:var(--paper); color:var(--ink);
   padding:.55rem .7rem; font:inherit; font-size:.85rem; resize:vertical;
 }
-.admin__field input:focus, .admin__field textarea:focus{outline:none; border-color:var(--indigo);}
+.admin__field input:focus, .admin__field textarea:focus, .admin__field select:focus{outline:none; border-color:var(--indigo);}
 .admin__field input[type="file"]{
   width:100%; font-size:.72rem; color:var(--mut);
 }

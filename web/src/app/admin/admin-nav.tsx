@@ -6,8 +6,9 @@ import { cx } from "./shared";
 
 const SECCIONES = [
   { href: "/admin", label: "Programas" },
-  { href: "/admin/equipo", label: "Equipo" },
+  { href: "/admin/radialistas", label: "Radialistas" },
   { href: "/admin/stream", label: "Transmisión" },
+  { href: "/admin/contacto", label: "Contacto" },
 ];
 
 export function AdminNav() {

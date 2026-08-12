@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/data/auth";
 import { getPrograma } from "@/lib/data/programas";
+import { getRadialistas } from "@/lib/data/radialistas";
 import { EditorPrograma } from "./editor-programa";
 
 type Tab = "programa" | "episodios";
@@ -15,7 +16,7 @@ export default async function EditarProgramaPage({
   await verifyAdminSession();
   const { id } = await params;
   const { tab } = await searchParams;
-  const programa = await getPrograma(id);
+  const [programa, radialistas] = await Promise.all([getPrograma(id), getRadialistas()]);
 
   if (!programa) {
     return (
@@ -32,5 +33,5 @@ export default async function EditarProgramaPage({
 
   // key={programa.id}: si se navega a OTRO programa, React remonta este
   // componente y sus useState vuelven a inicializarse desde el nuevo programa.
-  return <EditorPrograma key={programa.id} programa={programa} tabInicial={tabInicial} />;
+  return <EditorPrograma key={programa.id} programa={programa} radialistas={radialistas} tabInicial={tabInicial} />;
 }

@@ -1,42 +1,42 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { Panelista } from "@/lib/panelistas";
+import type { Radialista } from "@/lib/radialistas";
 
-type FilaPanelista = {
+type FilaRadialista = {
   id: string;
   nombre: string;
-  puesto: string;
+  localidad: string;
   foto_url: string;
 };
 
-function mapPanelista(fila: FilaPanelista): Panelista {
+function mapRadialista(fila: FilaRadialista): Radialista {
   return {
     id: fila.id,
     nombre: fila.nombre,
-    puesto: fila.puesto,
+    localidad: fila.localidad,
     fotoUrl: fila.foto_url,
   };
 }
 
-export async function getPanelistas(): Promise<Panelista[]> {
+export async function getRadialistas(): Promise<Radialista[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("panelistas")
-    .select("id, nombre, puesto, foto_url")
+    .from("radialistas")
+    .select("id, nombre, localidad, foto_url")
     .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return (data ?? []).map(mapPanelista);
+  return (data ?? []).map(mapRadialista);
 }
 
-export async function getPanelista(id: string): Promise<Panelista | null> {
+export async function getRadialista(id: string): Promise<Radialista | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("panelistas")
-    .select("id, nombre, puesto, foto_url")
+    .from("radialistas")
+    .select("id, nombre, localidad, foto_url")
     .eq("id", id)
     .maybeSingle();
 
   if (error) throw error;
-  return data ? mapPanelista(data) : null;
+  return data ? mapRadialista(data) : null;
 }

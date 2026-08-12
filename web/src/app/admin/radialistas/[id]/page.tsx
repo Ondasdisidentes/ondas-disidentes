@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/data/auth";
-import { getPanelista } from "@/lib/data/panelistas";
-import { PanelistaForm } from "../panelista-form";
+import { getRadialista } from "@/lib/data/radialistas";
+import { RadialistaForm } from "../radialista-form";
 
-export default async function EditarPanelistaPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditarRadialistaPage({ params }: { params: Promise<{ id: string }> }) {
   await verifyAdminSession();
   const { id } = await params;
-  const panelista = await getPanelista(id);
+  const radialista = await getRadialista(id);
 
-  if (!panelista) {
+  if (!radialista) {
     return (
       <div>
-        <p>No se encontró este integrante.</p>
-        <Link href="/admin/equipo" className="admin__btn admin__btn--ghost">
-          ← Volver al equipo
+        <p>No se encontró este radialista.</p>
+        <Link href="/admin/radialistas" className="admin__btn admin__btn--ghost">
+          ← Volver a radialistas
         </Link>
       </div>
     );
   }
 
-  return <PanelistaForm key={panelista.id} panelista={panelista} />;
+  return <RadialistaForm key={radialista.id} radialista={radialista} />;
 }

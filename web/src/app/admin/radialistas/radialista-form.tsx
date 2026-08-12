@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ICONOS_DISPONIBLES } from "@/lib/programas";
-import type { Panelista } from "@/lib/panelistas";
-import { actualizarPanelista, crearPanelista, eliminarPanelista } from "../equipo-actions";
+import type { Radialista } from "@/lib/radialistas";
+import { actualizarRadialista, crearRadialista, eliminarRadialista } from "../radialistas-actions";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const PREFIJO_SUBIDA = `${SUPABASE_URL}/storage/v1/object/public/panelistas/`;
@@ -32,17 +32,17 @@ function validarDimensiones(file: File): Promise<boolean> {
   });
 }
 
-export function PanelistaForm({ panelista }: { panelista?: Panelista }) {
+export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
   const router = useRouter();
-  const esEdicion = Boolean(panelista);
-  const esSubidaActual = Boolean(panelista && panelista.fotoUrl.startsWith(PREFIJO_SUBIDA));
+  const esEdicion = Boolean(radialista);
+  const esSubidaActual = Boolean(radialista && radialista.fotoUrl.startsWith(PREFIJO_SUBIDA));
 
-  const [nombre, setNombre] = useState(panelista?.nombre ?? "");
-  const [puesto, setPuesto] = useState(panelista?.puesto ?? "");
-  const [tipo, setTipo] = useState<Tipo>(!panelista || esSubidaActual ? "subida" : "icono");
+  const [nombre, setNombre] = useState(radialista?.nombre ?? "");
+  const [localidad, setLocalidad] = useState(radialista?.localidad ?? "");
+  const [tipo, setTipo] = useState<Tipo>(!radialista || esSubidaActual ? "subida" : "icono");
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(panelista?.fotoUrl ?? null);
-  const [icono, setIcono] = useState<string | null>(panelista && !esSubidaActual ? panelista.fotoUrl : null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(radialista?.fotoUrl ?? null);
+  const [icono, setIcono] = useState<string | null>(radialista && !esSubidaActual ? radialista.fotoUrl : null);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -88,31 +88,28 @@ export function PanelistaForm({ panelista }: { panelista?: Panelista }) {
 
     const formData = new FormData();
     formData.set("nombre", nombre.trim());
-    formData.set("puesto", puesto.trim());
+    formData.set("localidad", localidad.trim());
     formData.set("tipo", tipo);
     if (tipo === "subida" && archivo) formData.set("foto", archivo);
     if (tipo === "icono" && icono) formData.set("icono", icono);
 
-    const resultado = panelista
-      ? await actualizarPanelista(panelista.id, formData)
-      : await crearPanelista(formData);
+    const resultado = radialista
+      ? await actualizarRadialista(radialista.id, formData)
+      : await crearRadialista(formData);
 
-    // Si todo salió bien, crearPanelista redirige — esta línea no corre en ese caso.
-    // actualizarPanelista no redirige (se queda en la página), así que acá sí
-    // mostramos la confirmación.
     setEnviando(false);
-    if (resultado?.error) {
+    if (resultado && "error" in resultado) {
       setError(resultado.error);
       return;
     }
-    if (panelista) router.push("/admin/equipo");
+    router.push("/admin/radialistas");
   }
 
   async function handleEliminar() {
-    if (!panelista) return;
-    if (!window.confirm(`¿Eliminar a ${panelista.nombre} del equipo?`)) return;
+    if (!radialista) return;
+    if (!window.confirm(`¿Eliminar a ${radialista.nombre} de radialistas?`)) return;
     setEnviando(true);
-    const resultado = await eliminarPanelista(panelista.id);
+    const resultado = await eliminarRadialista(radialista.id);
     if (resultado?.error) {
       setError(resultado.error);
       setEnviando(false);
@@ -122,8 +119,8 @@ export function PanelistaForm({ panelista }: { panelista?: Panelista }) {
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">{esEdicion ? panelista!.nombre : "Agregar integrante"}</h2>
-        <Link href="/admin/equipo" className="admin__btn admin__btn--ghost">
+        <h2 className="admin__heading">{esEdicion ? radialista!.nombre : "Agregar radialista"}</h2>
+        <Link href="/admin/radialistas" className="admin__btn admin__btn--ghost">
           Cancelar
         </Link>
       </div>
@@ -135,8 +132,12 @@ export function PanelistaForm({ panelista }: { panelista?: Panelista }) {
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo" />
           </label>
           <label className="admin__field">
-            <span>Puesto</span>
-            <input value={puesto} onChange={(e) => setPuesto(e.target.value)} placeholder="Ej. Producción" />
+            <span>Localidad</span>
+            <input
+              value={localidad}
+              onChange={(e) => setLocalidad(e.target.value)}
+              placeholder="Ej. Cochabamba"
+            />
           </label>
         </div>
 
@@ -189,12 +190,12 @@ export function PanelistaForm({ panelista }: { panelista?: Panelista }) {
         <div className="admin__wizard-nav">
           {esEdicion && (
             <button type="button" onClick={handleEliminar} disabled={enviando} className="admin__ep-remove">
-              Eliminar integrante
+              Eliminar radialista
             </button>
           )}
           <div style={{ flex: 1 }} />
           <button type="button" onClick={handleGuardar} disabled={enviando} className="admin__btn">
-            {enviando ? "Guardando…" : esEdicion ? "Guardar cambios" : "Crear integrante"}
+            {enviando ? "Guardando…" : esEdicion ? "Guardar cambios" : "Crear radialista"}
           </button>
         </div>
       </div>

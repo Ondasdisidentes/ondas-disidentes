@@ -16,6 +16,8 @@ type FilaPrograma = {
   titulo: string;
   descripcion: string;
   icono: string;
+  radialista_id: string;
+  radialistas: { nombre: string } | null;
   episodios: FilaEpisodio[];
 };
 
@@ -36,12 +38,14 @@ function mapPrograma(fila: FilaPrograma): Programa {
     titulo: fila.titulo,
     descripcion: fila.descripcion,
     icono: fila.icono,
+    radialistaId: fila.radialista_id,
+    radialistaNombre: fila.radialistas?.nombre ?? "",
     episodios: (fila.episodios ?? []).map(mapEpisodio),
   };
 }
 
 const SELECT_PROGRAMA_CON_EPISODIOS =
-  "id, titulo, descripcion, icono, episodios(id, nombre, descripcion, duracion, contenido, created_at)";
+  "id, titulo, descripcion, icono, radialista_id, radialistas(nombre), episodios(id, nombre, descripcion, duracion, contenido, created_at)";
 
 export async function getProgramas(): Promise<Programa[]> {
   const supabase = await createClient();

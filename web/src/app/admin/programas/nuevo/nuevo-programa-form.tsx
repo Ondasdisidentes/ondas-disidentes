@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Radialista } from "@/lib/radialistas";
 import { crearPrograma } from "../../actions";
 import {
   CamposPrograma,
@@ -14,11 +15,12 @@ import {
 
 type Paso = 1 | 2;
 
-export function NuevoProgramaForm() {
+export function NuevoProgramaForm({ radialistas }: { radialistas: Radialista[] }) {
   const [paso, setPaso] = useState<Paso>(1);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [icono, setIcono] = useState<string | null>("/images/portada-default.webp");
+  const [radialistaId, setRadialistaId] = useState<string | null>(radialistas[0]?.id ?? null);
   const [episodiosForm, setEpisodiosForm] = useState<EpisodioForm[]>([nuevoEpisodioForm()]);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -34,13 +36,14 @@ export function NuevoProgramaForm() {
   }
 
   async function handleCrear() {
-    if (!titulo.trim() || !icono) return;
+    if (!titulo.trim() || !icono || !radialistaId) return;
     setError(null);
     setEnviando(true);
     const resultado = await crearPrograma({
       titulo: titulo.trim(),
       descripcion,
       icono,
+      radialistaId,
       episodios: episodiosForm.map(formAEpisodio),
     });
     // Si todo salió bien, crearPrograma ya redirigió — esta línea no corre.
@@ -50,7 +53,7 @@ export function NuevoProgramaForm() {
     }
   }
 
-  const paso1Valido = Boolean(titulo.trim() && icono);
+  const paso1Valido = Boolean(titulo.trim() && icono && radialistaId);
 
   return (
     <div>
@@ -88,6 +91,9 @@ export function NuevoProgramaForm() {
             setDescripcion={setDescripcion}
             icono={icono}
             setIcono={setIcono}
+            radialistas={radialistas}
+            radialistaId={radialistaId}
+            setRadialistaId={setRadialistaId}
           />
         ) : (
           <EditorEpisodios

@@ -26,6 +26,7 @@ export default async function AdminProgramasPage() {
               <div>
                 <h3 className="admin__heading">{p.titulo}</h3>
                 <p>{p.descripcion}</p>
+                <p className="admin__hint">Radialista: {p.radialistaNombre || "—"}</p>
               </div>
             </div>
             <div className="admin__eplist">

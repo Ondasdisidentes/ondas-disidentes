@@ -1,8 +1,13 @@
 import { getProgramas } from "@/lib/data/programas";
-import { getPanelistas } from "@/lib/data/panelistas";
+import { getRadialistas } from "@/lib/data/radialistas";
+import { getContactoConfig } from "@/lib/data/contacto";
 import HomeClient from "./home-client";
 
 export default async function Home() {
-  const [programas, panelistas] = await Promise.all([getProgramas(), getPanelistas()]);
-  return <HomeClient programas={programas} panelistas={panelistas} />;
+  const [programas, radialistas, contacto] = await Promise.all([
+    getProgramas(),
+    getRadialistas(),
+    getContactoConfig(),
+  ]);
+  return <HomeClient programas={programas} radialistas={radialistas} contacto={contacto} />;
 }

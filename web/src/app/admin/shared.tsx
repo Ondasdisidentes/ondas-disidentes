@@ -3,7 +3,9 @@
 import { useId, useState } from "react";
 import Image from "next/image";
 import { ICONOS_DISPONIBLES, type ContenidoEpisodio, type Episodio } from "@/lib/programas";
+import type { Radialista } from "@/lib/radialistas";
 import { subirAudioEpisodio } from "./actions";
+import { crearRadialista } from "./radialistas-actions";
 
 export function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -88,8 +90,12 @@ export function CamposPrograma(props: {
   setDescripcion: (v: string) => void;
   icono: string | null;
   setIcono: (v: string) => void;
+  radialistas: Radialista[];
+  radialistaId: string | null;
+  setRadialistaId: (v: string) => void;
 }) {
-  const { titulo, setTitulo, descripcion, setDescripcion, icono, setIcono } = props;
+  const { titulo, setTitulo, descripcion, setDescripcion, icono, setIcono, radialistas, radialistaId, setRadialistaId } =
+    props;
 
   return (
     <>
@@ -107,6 +113,8 @@ export function CamposPrograma(props: {
           />
         </label>
       </div>
+
+      <RadialistaPicker radialistas={radialistas} radialistaId={radialistaId} setRadialistaId={setRadialistaId} />
 
       <div className="admin__block">
         <span className="lbl" style={{ display: "block", marginBottom: ".4rem" }}>
@@ -128,6 +136,182 @@ export function CamposPrograma(props: {
         </div>
       </div>
     </>
+  );
+}
+
+const TIPOS_FOTO_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
+
+function RadialistaPicker(props: {
+  radialistas: Radialista[];
+  radialistaId: string | null;
+  setRadialistaId: (v: string) => void;
+}) {
+  const { radialistas, radialistaId, setRadialistaId } = props;
+  const [lista, setLista] = useState(radialistas);
+  const [modo, setModo] = useState<"elegir" | "crear">(radialistas.length === 0 ? "crear" : "elegir");
+  const [nombre, setNombre] = useState("");
+  const [localidad, setLocalidad] = useState("");
+  const [tipoFoto, setTipoFoto] = useState<"subida" | "icono">("subida");
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [iconoFoto, setIconoFoto] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [creando, setCreando] = useState(false);
+
+  async function handleCrear() {
+    if (!nombre.trim()) {
+      setError("Falta el nombre.");
+      return;
+    }
+    if (tipoFoto === "subida" && !archivo) {
+      setError("Subí una foto.");
+      return;
+    }
+    if (tipoFoto === "icono" && !iconoFoto) {
+      setError("Elegí un ícono.");
+      return;
+    }
+
+    setError(null);
+    setCreando(true);
+
+    const formData = new FormData();
+    formData.set("nombre", nombre.trim());
+    formData.set("localidad", localidad.trim());
+    formData.set("tipo", tipoFoto);
+    if (tipoFoto === "subida" && archivo) formData.set("foto", archivo);
+    if (tipoFoto === "icono" && iconoFoto) formData.set("icono", iconoFoto);
+
+    const resultado = await crearRadialista(formData);
+    setCreando(false);
+    if ("error" in resultado) {
+      setError(resultado.error);
+      return;
+    }
+
+    setLista((prev) => [...prev, resultado.radialista]);
+    setRadialistaId(resultado.radialista.id);
+    setModo("elegir");
+    setNombre("");
+    setLocalidad("");
+    setArchivo(null);
+    setIconoFoto(null);
+  }
+
+  return (
+    <div className="admin__block">
+      <span className="lbl" style={{ display: "block", marginBottom: ".4rem" }}>
+        Radialista asignado
+      </span>
+
+      {modo === "elegir" ? (
+        <div style={{ display: "flex", gap: ".75rem", alignItems: "flex-start" }}>
+          <label className="admin__field" style={{ flex: 1, marginBottom: 0 }}>
+            <select value={radialistaId ?? ""} onChange={(e) => setRadialistaId(e.target.value)}>
+              <option value="" disabled>
+                Elegí un radialista
+              </option>
+              {lista.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nombre}
+                  {r.localidad ? ` — ${r.localidad}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="admin__btn admin__btn--ghost" onClick={() => setModo("crear")}>
+            + Nuevo radialista
+          </button>
+        </div>
+      ) : (
+        <div className="admin__ep">
+          <div className="admin__ep-hd">
+            <span>Nuevo radialista</span>
+            {lista.length > 0 && (
+              <button
+                type="button"
+                className="admin__ep-remove"
+                onClick={() => {
+                  setModo("elegir");
+                  setError(null);
+                }}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+
+          <div className="admin__row">
+            <label className="admin__field">
+              <span>Nombre</span>
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo" />
+            </label>
+            <label className="admin__field">
+              <span>Localidad</span>
+              <input
+                value={localidad}
+                onChange={(e) => setLocalidad(e.target.value)}
+                placeholder="Ej. Cochabamba"
+              />
+            </label>
+          </div>
+
+          <div>
+            <span className="lbl">Foto</span>
+            <div className="admin__toggle">
+              <button type="button" onClick={() => setTipoFoto("subida")} aria-pressed={tipoFoto === "subida"}>
+                Subir foto
+              </button>
+              <button type="button" onClick={() => setTipoFoto("icono")} aria-pressed={tipoFoto === "icono"}>
+                Elegir ícono
+              </button>
+            </div>
+
+            {tipoFoto === "subida" ? (
+              <label className="admin__field" style={{ marginTop: ".5rem" }}>
+                <input
+                  key="foto"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    if (f && !TIPOS_FOTO_PERMITIDOS.includes(f.type)) {
+                      setError("La foto debe ser PNG, JPG o WEBP.");
+                      e.target.value = "";
+                      return;
+                    }
+                    setError(null);
+                    setArchivo(f);
+                  }}
+                />
+              </label>
+            ) : (
+              <div className="admin__icons" style={{ marginTop: ".5rem" }}>
+                {ICONOS_DISPONIBLES.map((src) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setIconoFoto(src)}
+                    className="admin__icon"
+                    aria-label={`Elegir ${src}`}
+                    aria-pressed={iconoFoto === src}
+                    style={{ backgroundImage: `url(${src})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <p className="admin__error">{error}</p>}
+
+          <div className="admin__wizard-nav">
+            <div style={{ flex: 1 }} />
+            <button type="button" onClick={handleCrear} disabled={creando} className="admin__btn admin__btn--ghost">
+              {creando ? "Creando…" : "Crear radialista"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -5,23 +5,38 @@ import Link from "next/link";
 import { actualizarPrograma } from "../../actions";
 import { CamposPrograma, cx } from "../../shared";
 import type { Programa } from "@/lib/programas";
+import type { Radialista } from "@/lib/radialistas";
 
 type Tab = "programa" | "episodios";
 
-export function EditorPrograma({ programa, tabInicial }: { programa: Programa; tabInicial: Tab }) {
+export function EditorPrograma({
+  programa,
+  radialistas,
+  tabInicial,
+}: {
+  programa: Programa;
+  radialistas: Radialista[];
+  tabInicial: Tab;
+}) {
   const [tab, setTab] = useState<Tab>(tabInicial);
   const [titulo, setTitulo] = useState(programa.titulo);
   const [descripcion, setDescripcion] = useState(programa.descripcion);
   const [icono, setIcono] = useState<string | null>(programa.icono);
+  const [radialistaId, setRadialistaId] = useState<string | null>(programa.radialistaId);
   const [avisoPrograma, setAvisoPrograma] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   async function guardarPrograma() {
-    if (!titulo.trim() || !icono) return;
+    if (!titulo.trim() || !icono || !radialistaId) return;
     setError(null);
     setGuardando(true);
-    const resultado = await actualizarPrograma(programa.id, { titulo: titulo.trim(), descripcion, icono });
+    const resultado = await actualizarPrograma(programa.id, {
+      titulo: titulo.trim(),
+      descripcion,
+      icono,
+      radialistaId,
+    });
     setGuardando(false);
     if (resultado?.error) {
       setError(resultado.error);
@@ -59,6 +74,9 @@ export function EditorPrograma({ programa, tabInicial }: { programa: Programa; t
               setDescripcion={setDescripcion}
               icono={icono}
               setIcono={setIcono}
+              radialistas={radialistas}
+              radialistaId={radialistaId}
+              setRadialistaId={setRadialistaId}
             />
             {error && <p className="admin__error">{error}</p>}
             <div className="admin__wizard-nav">
@@ -67,7 +85,7 @@ export function EditorPrograma({ programa, tabInicial }: { programa: Programa; t
               <button
                 type="button"
                 onClick={guardarPrograma}
-                disabled={!titulo.trim() || !icono || guardando}
+                disabled={!titulo.trim() || !icono || !radialistaId || guardando}
                 className="admin__btn"
               >
                 {guardando ? "Guardando…" : "Guardar cambios"}

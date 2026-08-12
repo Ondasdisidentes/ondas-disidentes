@@ -60,6 +60,7 @@ type ProgramaInput = {
   titulo: string;
   descripcion: string;
   icono: string;
+  radialistaId: string;
   episodios: EpisodioInput[];
 };
 
@@ -77,12 +78,20 @@ export async function crearPrograma(input: ProgramaInput): Promise<ActionResult>
   if (!input.titulo.trim() || !input.icono) {
     return { error: "Falta título o ícono." };
   }
+  if (!input.radialistaId) {
+    return { error: "Falta asignar un radialista." };
+  }
 
   const supabase = await createClient();
 
   const { data: programa, error } = await supabase
     .from("programas")
-    .insert({ titulo: input.titulo.trim(), descripcion: input.descripcion, icono: input.icono })
+    .insert({
+      titulo: input.titulo.trim(),
+      descripcion: input.descripcion,
+      icono: input.icono,
+      radialista_id: input.radialistaId,
+    })
     .select("id")
     .single();
 
@@ -108,17 +117,25 @@ export async function crearPrograma(input: ProgramaInput): Promise<ActionResult>
 
 export async function actualizarPrograma(
   id: string,
-  cambios: { titulo: string; descripcion: string; icono: string }
+  cambios: { titulo: string; descripcion: string; icono: string; radialistaId: string }
 ): Promise<ActionResult> {
   await verifyAdminSession();
   if (!cambios.titulo.trim() || !cambios.icono) {
     return { error: "Falta título o ícono." };
   }
+  if (!cambios.radialistaId) {
+    return { error: "Falta asignar un radialista." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("programas")
-    .update({ titulo: cambios.titulo.trim(), descripcion: cambios.descripcion, icono: cambios.icono })
+    .update({
+      titulo: cambios.titulo.trim(),
+      descripcion: cambios.descripcion,
+      icono: cambios.icono,
+      radialista_id: cambios.radialistaId,
+    })
     .eq("id", id);
 
   if (error) return { error: "No se pudo guardar el programa." };
