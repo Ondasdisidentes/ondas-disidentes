@@ -3,8 +3,8 @@ import Link from "next/link";
 import "./admin.css";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/data/auth";
-import { logout } from "./actions";
-import { AdminNav } from "./admin-nav";
+import { logout, solicitarCambioContrasena } from "./actions";
+import { ProfileMenu } from "./profile-menu";
 
 export const metadata: Metadata = {
   title: "Panel de administración — Ondas Disidentes",
@@ -20,25 +20,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="admin">
       <header className="admin__hd">
-        <div>
+        <Link href="/admin" className="admin__hd-title">
           <h1 className="admin__heading">Panel de administración</h1>
           <p>Ondas Disidentes</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
-          {estaLogueado && (
-            <form action={logout}>
-              <button type="submit" className="admin__logout">
-                Cerrar sesión ({user!.email})
-              </button>
-            </form>
-          )}
+        </Link>
+        {estaLogueado ? (
+          <ProfileMenu email={user!.email!} cambiarContrasena={solicitarCambioContrasena} cerrarSesion={logout} />
+        ) : (
           <Link href="/" className="admin__back">
             ← Volver al sitio
           </Link>
-        </div>
+        )}
       </header>
-
-      {estaLogueado && <AdminNav />}
 
       <main className="admin__main">{children}</main>
     </div>

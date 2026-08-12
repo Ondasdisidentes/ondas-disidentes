@@ -12,8 +12,8 @@ export default async function NuevoEpisodioPage({ params }: { params: Promise<{ 
     return (
       <div>
         <p>No se encontró este programa.</p>
-        <Link href="/admin" className="admin__btn admin__btn--ghost">
-          ← Volver a programas
+        <Link href="/admin/programas" className="admin__btn admin__btn--ghost">
+          ← Atrás
         </Link>
       </div>
     );

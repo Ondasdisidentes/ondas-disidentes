@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { ContactoConfig } from "@/lib/data/contacto";
 import { actualizarConfigContacto } from "../contacto-actions";
 
@@ -10,6 +11,8 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
   const [instagram, setInstagram] = useState(config.instagram);
   const [facebook, setFacebook] = useState(config.facebook);
   const [soundcloud, setSoundcloud] = useState(config.soundcloud);
+  const [tiktok, setTiktok] = useState(config.tiktok);
+  const [youtube, setYoutube] = useState(config.youtube);
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -25,6 +28,8 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
     formData.set("instagram", instagram.trim());
     formData.set("facebook", facebook.trim());
     formData.set("soundcloud", soundcloud.trim());
+    formData.set("tiktok", tiktok.trim());
+    formData.set("youtube", youtube.trim());
 
     const resultado = await actualizarConfigContacto(formData);
     setEnviando(false);
@@ -38,7 +43,12 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Contacto</h2>
+        <div className="admin__section-hd-left">
+          <Link href="/admin" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">Contacto</h2>
+        </div>
       </div>
 
       <div className="admin__form">
@@ -94,6 +104,26 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
             value={soundcloud}
             onChange={(e) => setSoundcloud(e.target.value)}
             placeholder="https://soundcloud.com/ondasdisidentes"
+          />
+        </label>
+
+        <label className="admin__field">
+          <span>TikTok</span>
+          <input
+            type="url"
+            value={tiktok}
+            onChange={(e) => setTiktok(e.target.value)}
+            placeholder="https://tiktok.com/@ondasdisidentes"
+          />
+        </label>
+
+        <label className="admin__field">
+          <span>YouTube</span>
+          <input
+            type="url"
+            value={youtube}
+            onChange={(e) => setYoutube(e.target.value)}
+            placeholder="https://youtube.com/@ondasdisidentes"
           />
         </label>
 

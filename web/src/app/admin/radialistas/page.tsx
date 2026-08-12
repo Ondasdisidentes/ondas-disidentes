@@ -10,7 +10,12 @@ export default async function RadialistasPage() {
   return (
     <>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Radialistas</h2>
+        <div className="admin__section-hd-left">
+          <Link href="/admin" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">Radialistas</h2>
+        </div>
         <Link href="/admin/radialistas/nuevo" className="admin__btn">
           + Agregar radialista
         </Link>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
-import Image from "next/image";
-import { ICONOS_DISPONIBLES, type ContenidoEpisodio, type Episodio } from "@/lib/programas";
-import type { Radialista } from "@/lib/radialistas";
-import { subirAudioEpisodio } from "./actions";
+import { ICONO_PROGRAMA_DEFAULT, type ContenidoEpisodio, type Episodio } from "@/lib/programas";
+import { RADIALISTA_FOTO_DEFAULT, type Radialista } from "@/lib/radialistas";
+import { subirAudioEpisodio, subirImagenPrograma } from "./actions";
 import { crearRadialista } from "./radialistas-actions";
 
 export function cx(...parts: Array<string | false | undefined>) {
@@ -83,57 +82,129 @@ export function slugify(texto: string) {
   );
 }
 
+const TIPOS_IMG_PROGRAMA_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
+const MAX_IMG_PROGRAMA_BYTES = 5 * 1024 * 1024;
+
+type TipoImagenPrograma = "default" | "personalizado";
+
 export function CamposPrograma(props: {
   titulo: string;
   setTitulo: (v: string) => void;
   descripcion: string;
   setDescripcion: (v: string) => void;
   icono: string | null;
-  setIcono: (v: string) => void;
+  setIcono: (v: string | null) => void;
   radialistas: Radialista[];
   radialistaId: string | null;
   setRadialistaId: (v: string) => void;
 }) {
   const { titulo, setTitulo, descripcion, setDescripcion, icono, setIcono, radialistas, radialistaId, setRadialistaId } =
     props;
+  const [tipoImagen, setTipoImagen] = useState<TipoImagenPrograma>(
+    icono && icono !== ICONO_PROGRAMA_DEFAULT ? "personalizado" : "default"
+  );
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [errorImagen, setErrorImagen] = useState<string | null>(null);
+
+  function seleccionarDefault() {
+    setTipoImagen("default");
+    setErrorImagen(null);
+    setIcono(null);
+  }
+
+  function seleccionarPersonalizado() {
+    setTipoImagen("personalizado");
+    setErrorImagen(null);
+  }
+
+  async function handleImagen(archivo: File | null) {
+    setErrorImagen(null);
+    if (!archivo) return;
+    if (!TIPOS_IMG_PROGRAMA_PERMITIDOS.includes(archivo.type)) {
+      setErrorImagen("La imagen debe ser PNG, JPG o WEBP.");
+      return;
+    }
+    if (archivo.size > MAX_IMG_PROGRAMA_BYTES) {
+      setErrorImagen("La imagen no puede pesar más de 5MB.");
+      return;
+    }
+    setSubiendoImagen(true);
+    const formData = new FormData();
+    formData.set("archivo", archivo);
+    const resultado = await subirImagenPrograma(formData);
+    setSubiendoImagen(false);
+    if ("error" in resultado) {
+      setErrorImagen(resultado.error);
+      return;
+    }
+    setIcono(resultado.url);
+  }
 
   return (
     <>
-      <div className="admin__row">
-        <label className="admin__field">
-          <span>Título</span>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej. Cuerpo Político" />
-        </label>
-        <label className="admin__field">
-          <span>Descripción</span>
-          <input
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Breve descripción del programa"
-          />
-        </label>
-      </div>
+      <label className="admin__field">
+        <span>Título</span>
+        <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej. Cuerpo Político" />
+      </label>
+
+      <label className="admin__field">
+        <span>Descripción</span>
+        <textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          rows={5}
+          placeholder="Descripción del programa"
+        />
+      </label>
 
       <RadialistaPicker radialistas={radialistas} radialistaId={radialistaId} setRadialistaId={setRadialistaId} />
 
       <div className="admin__block">
         <span className="lbl" style={{ display: "block", marginBottom: ".4rem" }}>
-          Ícono — elige una ilustración de la marca
+          Imagen de portada
         </span>
-        <div className="admin__icons">
-          {ICONOS_DISPONIBLES.map((src) => (
-            <button
-              key={src}
-              type="button"
-              onClick={() => setIcono(src)}
-              className="admin__icon"
-              aria-label={`Elegir ${src}`}
-              aria-pressed={icono === src}
-            >
-              <Image src={src} alt="" fill className="object-cover" />
-            </button>
-          ))}
+        <div className="admin__toggle">
+          <button type="button" onClick={seleccionarDefault} aria-pressed={tipoImagen === "default"}>
+            Por defecto
+          </button>
+          <button type="button" onClick={seleccionarPersonalizado} aria-pressed={tipoImagen === "personalizado"}>
+            Personalizado
+          </button>
         </div>
+
+        {tipoImagen === "default" ? (
+          <div className="admin__thumb admin__thumb--lg" style={{ marginTop: ".6rem" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ICONO_PROGRAMA_DEFAULT}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
+        ) : (
+          <div className="admin__imgpicker" style={{ marginTop: ".6rem" }}>
+            {icono && (
+              <div className="admin__thumb admin__thumb--lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={icono} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
+            <div>
+              <label className="admin__field" style={{ marginBottom: 0 }}>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={subiendoImagen}
+                  onChange={(e) => handleImagen(e.target.files?.[0] ?? null)}
+                />
+              </label>
+              <p className="admin__hint" style={{ display: "block", marginTop: ".4rem" }}>
+                {subiendoImagen ? "Subiendo imagen…" : icono ? "Imagen propia cargada." : "Elegí un archivo para subir."}
+              </p>
+              {errorImagen && <p className="admin__error">{errorImagen}</p>}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -151,23 +222,15 @@ function RadialistaPicker(props: {
   const [modo, setModo] = useState<"elegir" | "crear">(radialistas.length === 0 ? "crear" : "elegir");
   const [nombre, setNombre] = useState("");
   const [localidad, setLocalidad] = useState("");
-  const [tipoFoto, setTipoFoto] = useState<"subida" | "icono">("subida");
+  const [tipoFoto, setTipoFoto] = useState<"default" | "personalizado">("default");
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [iconoFoto, setIconoFoto] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
 
   async function handleCrear() {
     if (!nombre.trim()) {
       setError("Falta el nombre.");
-      return;
-    }
-    if (tipoFoto === "subida" && !archivo) {
-      setError("Subí una foto.");
-      return;
-    }
-    if (tipoFoto === "icono" && !iconoFoto) {
-      setError("Elegí un ícono.");
       return;
     }
 
@@ -178,8 +241,7 @@ function RadialistaPicker(props: {
     formData.set("nombre", nombre.trim());
     formData.set("localidad", localidad.trim());
     formData.set("tipo", tipoFoto);
-    if (tipoFoto === "subida" && archivo) formData.set("foto", archivo);
-    if (tipoFoto === "icono" && iconoFoto) formData.set("icono", iconoFoto);
+    if (tipoFoto === "personalizado" && archivo) formData.set("foto", archivo);
 
     const resultado = await crearRadialista(formData);
     setCreando(false);
@@ -194,7 +256,8 @@ function RadialistaPicker(props: {
     setNombre("");
     setLocalidad("");
     setArchivo(null);
-    setIconoFoto(null);
+    setPreviewUrl(null);
+    setTipoFoto("default");
   }
 
   return (
@@ -258,46 +321,59 @@ function RadialistaPicker(props: {
           <div>
             <span className="lbl">Foto</span>
             <div className="admin__toggle">
-              <button type="button" onClick={() => setTipoFoto("subida")} aria-pressed={tipoFoto === "subida"}>
-                Subir foto
+              <button
+                type="button"
+                onClick={() => {
+                  setTipoFoto("default");
+                  setError(null);
+                  setArchivo(null);
+                  setPreviewUrl(null);
+                }}
+                aria-pressed={tipoFoto === "default"}
+              >
+                Por defecto
               </button>
-              <button type="button" onClick={() => setTipoFoto("icono")} aria-pressed={tipoFoto === "icono"}>
-                Elegir ícono
+              <button type="button" onClick={() => setTipoFoto("personalizado")} aria-pressed={tipoFoto === "personalizado"}>
+                Personalizado
               </button>
             </div>
 
-            {tipoFoto === "subida" ? (
-              <label className="admin__field" style={{ marginTop: ".5rem" }}>
-                <input
-                  key="foto"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    if (f && !TIPOS_FOTO_PERMITIDOS.includes(f.type)) {
-                      setError("La foto debe ser PNG, JPG o WEBP.");
-                      e.target.value = "";
-                      return;
-                    }
-                    setError(null);
-                    setArchivo(f);
-                  }}
+            {tipoFoto === "default" ? (
+              <div className="admin__thumb admin__thumb--lg" style={{ marginTop: ".6rem" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={RADIALISTA_FOTO_DEFAULT}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
-              </label>
-            ) : (
-              <div className="admin__icons" style={{ marginTop: ".5rem" }}>
-                {ICONOS_DISPONIBLES.map((src) => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setIconoFoto(src)}
-                    className="admin__icon"
-                    aria-label={`Elegir ${src}`}
-                    aria-pressed={iconoFoto === src}
-                    style={{ backgroundImage: `url(${src})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                  />
-                ))}
               </div>
+            ) : (
+              <>
+                <label className="admin__field" style={{ marginTop: ".6rem" }}>
+                  <input
+                    key="foto"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      if (f && !TIPOS_FOTO_PERMITIDOS.includes(f.type)) {
+                        setError("La foto debe ser PNG, JPG o WEBP.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setError(null);
+                      setArchivo(f);
+                      setPreviewUrl(f ? URL.createObjectURL(f) : null);
+                    }}
+                  />
+                </label>
+                {previewUrl && (
+                  <div className="admin__thumb admin__thumb--lg" style={{ marginTop: ".6rem" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                )}
+              </>
             )}
           </div>
 

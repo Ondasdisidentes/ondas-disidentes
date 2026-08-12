@@ -1,48 +1,52 @@
-import Image from "next/image";
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/data/auth";
-import { getProgramas } from "@/lib/data/programas";
+import { IconMic, IconPeople, IconBroadcast, IconMail } from "./icons";
 
-export default async function AdminProgramasPage() {
+const SECCIONES = [
+  {
+    href: "/admin/programas",
+    label: "Programas",
+    desc: "Crear y editar programas y sus episodios.",
+    Icon: IconMic,
+  },
+  {
+    href: "/admin/radialistas",
+    label: "Radialistas",
+    desc: "Perfiles de las radialistas del equipo.",
+    Icon: IconPeople,
+  },
+  {
+    href: "/admin/stream",
+    label: "Transmisión",
+    desc: "Configuración del stream en vivo (giss.tv).",
+    Icon: IconBroadcast,
+  },
+  {
+    href: "/admin/contacto",
+    label: "Contacto",
+    desc: "Email, teléfono y redes sociales del sitio.",
+    Icon: IconMail,
+  },
+];
+
+export default async function AdminInicioPage() {
   await verifyAdminSession();
-  const programas = await getProgramas();
 
   return (
-    <>
+    <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Programas</h2>
-        <Link href="/admin/programas/nuevo" className="admin__btn">
-          + Agregar programa
-        </Link>
+        <h2 className="admin__heading">Inicio</h2>
       </div>
 
-      <div className="admin__grid">
-        {programas.map((p) => (
-          <Link href={`/admin/programas/${p.id}`} key={p.id} className="admin__card admin__card--link">
-            <div className="admin__card-hd">
-              <div className="admin__thumb">
-                <Image src={p.icono} alt="" fill className="object-cover" />
-              </div>
-              <div>
-                <h3 className="admin__heading">{p.titulo}</h3>
-                <p>{p.descripcion}</p>
-                <p className="admin__hint">Radialista: {p.radialistaNombre || "—"}</p>
-              </div>
-            </div>
-            <div className="admin__eplist">
-              <span className="admin__eplist-lbl">
-                {p.episodios.length} episodio{p.episodios.length === 1 ? "" : "s"}
-              </span>
-              {p.episodios.map((e) => (
-                <div key={e.id} className="admin__eprow">
-                  <span>{e.nombre}</span>
-                  <span>{e.contenido.tipo === "archivo" ? "Archivo" : "SoundCloud"}</span>
-                </div>
-              ))}
-            </div>
+      <div className="admin__dash">
+        {SECCIONES.map(({ href, label, desc, Icon }) => (
+          <Link key={href} href={href} className="admin__dash-card">
+            <Icon />
+            <span className="admin__dash-card-label">{label}</span>
+            <p className="admin__dash-card-desc">{desc}</p>
           </Link>
         ))}
       </div>
-    </>
+    </div>
   );
 }

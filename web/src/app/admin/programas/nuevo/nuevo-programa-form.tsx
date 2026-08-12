@@ -19,7 +19,7 @@ export function NuevoProgramaForm({ radialistas }: { radialistas: Radialista[] }
   const [paso, setPaso] = useState<Paso>(1);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [icono, setIcono] = useState<string | null>("/images/portada-default.webp");
+  const [icono, setIcono] = useState<string | null>(null);
   const [radialistaId, setRadialistaId] = useState<string | null>(radialistas[0]?.id ?? null);
   const [episodiosForm, setEpisodiosForm] = useState<EpisodioForm[]>([nuevoEpisodioForm()]);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export function NuevoProgramaForm({ radialistas }: { radialistas: Radialista[] }
   }
 
   async function handleCrear() {
-    if (!titulo.trim() || !icono || !radialistaId) return;
+    if (!titulo.trim() || !radialistaId) return;
     setError(null);
     setEnviando(true);
     const resultado = await crearPrograma({
@@ -53,15 +53,17 @@ export function NuevoProgramaForm({ radialistas }: { radialistas: Radialista[] }
     }
   }
 
-  const paso1Valido = Boolean(titulo.trim() && icono && radialistaId);
+  const paso1Valido = Boolean(titulo.trim() && radialistaId);
 
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Agregar programa</h2>
-        <Link href="/admin" className="admin__btn admin__btn--ghost">
-          Cancelar
-        </Link>
+        <div className="admin__section-hd-left">
+          <Link href="/admin/programas" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">Agregar programa</h2>
+        </div>
       </div>
 
       <div className="admin__steps">

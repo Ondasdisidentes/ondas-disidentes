@@ -1,7 +1,6 @@
 // Modelo de datos compartido entre la vista pública (dial de programas) y
 // /admin. Los datos viven en Supabase (tablas `programas`/`episodios`,
-// ver web/src/lib/data/programas.ts) — este archivo solo define los tipos
-// y la lista estática de íconos disponibles.
+// ver web/src/lib/data/programas.ts).
 
 export type ContenidoEpisodio =
   | { tipo: "archivo"; nombreArchivo: string; url: string }
@@ -26,13 +25,5 @@ export type Programa = {
   episodios: Episodio[];
 };
 
-// Ilustraciones disponibles para elegir como ícono de un programa (assets/ilustraciones).
-export const ICONOS_DISPONIBLES: string[] = [
-  "/images/portada-default.webp",
-  "/images/episode-01.webp",
-  "/images/episode-02.webp",
-  "/images/episode-03.webp",
-  ...Array.from({ length: 22 }, (_, i) => `/images/iconos/ilustracion-${String(i + 1).padStart(2, "0")}.png`),
-  "/images/iconos/sticker-01.png",
-  "/images/iconos/sticker-02.png",
-];
+// Imagen de portada cuando el programa no tiene una subida propia.
+export const ICONO_PROGRAMA_DEFAULT = "/images/portada-default.webp";

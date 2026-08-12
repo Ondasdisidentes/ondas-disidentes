@@ -7,20 +7,55 @@
   font-family:var(--f-body);
 }
 
-/* Encabezados del admin: misma Fixture Ultra del sitio público, pero en su
-   peso SemiBold en vez de Bold — a estos tamaños más chicos, el Bold se veía
-   demasiado pesado y costaba leerlo. Más grandes que el resto de la UI a propósito. */
-.admin__heading{font-family:var(--f-tit); font-weight:600; letter-spacing:.01em; text-transform:uppercase;}
+/* Encabezados del admin: Konsens Bold — más grandes que el resto de la UI a propósito. */
+.admin__heading{font-family:var(--f-body); font-weight:700; letter-spacing:.01em; text-transform:uppercase;}
 
 .admin__hd{
   display:flex; align-items:center; justify-content:space-between;
   border-bottom:2px solid var(--ink);
   padding:1rem clamp(.9rem,3vw,1.6rem);
 }
-.admin__hd h1{margin:0; font-size:2.4rem;}
+.admin__hd-title{display:block; text-decoration:none; color:inherit; transition:.12s;}
+.admin__hd-title:hover .admin__heading{color:var(--indigo);}
+.admin__hd h1{margin:0; font-size:1.3rem;}
 .admin__hd p{margin:.15rem 0 0; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); font-weight:700;}
 .admin__back{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700; text-decoration:underline; color:var(--mut);}
 .admin__back:hover{color:var(--indigo);}
+
+/* botón de perfil (header) — cuadrado con la inicial del email, abre un
+   menú con el rol, cambiar contraseña, ir al sitio y cerrar sesión */
+.admin__profile{position:relative; flex:none;}
+.admin__profile-btn{
+  width:2.5rem; height:2.5rem;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--ink); background:var(--indigo); color:var(--paper);
+  font-family:var(--f-body); font-weight:700; font-size:1rem; text-transform:uppercase;
+  transition:.12s;
+}
+.admin__profile-btn:hover{background:var(--lime); color:var(--ink);}
+.admin__profile-btn[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper);}
+
+.admin__profile-menu{
+  position:absolute; top:calc(100% + .6rem); right:0; z-index:20;
+  width:16rem; max-width:calc(100vw - 1.8rem);
+  border:2px solid var(--ink); background:var(--paper); box-shadow:6px 6px 0 var(--ink);
+  padding:.9rem 1rem 1rem;
+}
+.admin__profile-email{margin:0; font-size:.78rem; font-weight:700; line-height:1.35; word-break:break-all;}
+.admin__profile-role{
+  display:inline-block; margin-top:.4rem;
+  font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+  color:var(--indigo); border:2px solid var(--indigo); padding:.15rem .45rem;
+}
+.admin__profile-divider{height:2px; background:var(--ink); opacity:.15; margin:.8rem 0;}
+.admin__profile-item{
+  display:block; width:100%; text-align:left; padding:.45rem 0;
+  font-size:.76rem; letter-spacing:.02em; font-weight:700; color:var(--ink);
+}
+.admin__profile-item:hover{color:var(--indigo);}
+.admin__profile-item:disabled{opacity:.5; cursor:not-allowed;}
+.admin__profile-item--danger:hover{color:#b3261e;}
+.admin__profile-hint{font-size:.66rem; color:var(--mut); margin:.1rem 0 0;}
 
 .admin__banner{
   margin:1rem clamp(.9rem,3vw,1.6rem) 0;
@@ -33,8 +68,11 @@
 }
 
 .admin__main{padding:clamp(.9rem,3vw,1.6rem);}
-.admin__section-hd{display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;}
-.admin__section-hd h2{margin:0; font-size:2.6rem;}
+.admin__section-hd{display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; gap:.9rem;}
+.admin__section-hd h2, .admin__section-hd h1{margin:0; font-size:1.9rem;}
+/* agrupa el botón "← Atrás" con el título a la izquierda del section-hd,
+   dejando la acción principal (si hay) sola a la derecha */
+.admin__section-hd-left{display:flex; align-items:center; gap:.9rem; min-width:0;}
 
 .admin__btn{
   display:inline-flex; align-items:center; gap:.5rem;
@@ -48,6 +86,25 @@
 .admin__btn:disabled{opacity:.4; cursor:not-allowed;}
 .admin__btn--ghost{background:transparent; color:var(--ink); border-color:var(--ink);}
 .admin__btn--ghost:hover{background:var(--ink); color:var(--paper);}
+.admin__btn--danger{background:#b3261e; border-color:#b3261e; color:var(--paper);}
+.admin__btn--danger:hover{background:#8f1e18; border-color:#8f1e18; color:var(--paper);}
+
+/* modal de confirmación (eliminar programa/episodio/radialista) */
+.admin__modal-backdrop{
+  position:fixed; inset:0; z-index:50;
+  background:rgba(45,45,45,.5);
+  display:flex; align-items:center; justify-content:center;
+  padding:1rem;
+}
+.admin__modal{
+  width:100%; max-width:24rem;
+  border:2px solid var(--ink); background:var(--paper);
+  box-shadow:7px 7px 0 var(--ink);
+  padding:1.4rem;
+}
+.admin__modal-title{margin:0 0 .6rem; font-size:1.3rem;}
+.admin__modal-msg{margin:0 0 1.2rem; font-size:.82rem; line-height:1.5; color:var(--ink);}
+.admin__modal-actions{display:flex; justify-content:flex-end; gap:.6rem;}
 
 .admin__grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem;}
 .admin__card{border:2px solid var(--ink); background:var(--paper-2); padding:1rem; box-shadow:5px 5px 0 var(--ink);}
@@ -55,8 +112,27 @@
 .admin__card--link:hover{background:var(--paper); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink);}
 .admin__card-hd{display:flex; gap:.75rem;}
 .admin__thumb{width:56px; height:56px; flex:none; position:relative; overflow:hidden; border:2px solid var(--ink);}
-.admin__card h3{margin:0; font-size:1.9rem; line-height:1.15;}
+.admin__thumb--lg{width:96px; height:96px;}
+
+/* imagen de portada de un programa: preview + input de subida */
+.admin__imgpicker{display:flex; gap:1rem; align-items:flex-start;}
+.admin__card h3{margin:0; font-size:1.4rem; line-height:1.15;}
 .admin__card p{margin:.25rem 0 0; font-size:.78rem; color:var(--mut); line-height:1.4;}
+
+/* dashboard de inicio — 4 botones grandes a las secciones */
+.admin__dash{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem;}
+.admin__dash-card{
+  display:flex; flex-direction:column; align-items:flex-start; gap:.7rem;
+  border:2px solid var(--ink); background:var(--paper-2); padding:1.5rem;
+  box-shadow:5px 5px 0 var(--ink); transition:.12s; text-decoration:none; color:inherit;
+}
+.admin__dash-card:hover{background:var(--paper); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink);}
+.admin__dash-card svg{width:28px; height:28px; color:var(--indigo);}
+.admin__dash-card-label{
+  font-family:var(--f-body); font-weight:700; font-size:1.15rem;
+  text-transform:uppercase; letter-spacing:.02em;
+}
+.admin__dash-card-desc{margin:0; font-size:.76rem; color:var(--mut); line-height:1.4;}
 
 .admin__eplist{border-top:2px solid var(--ink); margin-top:.9rem; padding-top:.6rem; display:flex; flex-direction:column; gap:.3rem;}
 .admin__eplist-lbl{font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--mut); margin-bottom:.2rem;}
@@ -79,6 +155,19 @@
   padding:.55rem .7rem; font:inherit; font-size:.85rem; resize:vertical;
 }
 .admin__field input:focus, .admin__field textarea:focus, .admin__field select:focus{outline:none; border-color:var(--indigo);}
+.admin__field input[readonly]{background:var(--paper-2); color:var(--mut); cursor:text;}
+.admin__field input[readonly]:focus{color:var(--ink); border-color:var(--ink);}
+
+.admin__copyfield{position:relative;}
+.admin__copyfield input{padding-right:2.6rem;}
+.admin__copybtn{
+  position:absolute; top:50%; right:.35rem; transform:translateY(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width:1.9rem; height:1.9rem; border:none; background:transparent; color:var(--mut);
+  cursor:pointer; transition:.12s;
+}
+.admin__copybtn:hover{color:var(--indigo);}
+.admin__copybtn.is-copied{color:#2e7d32;}
 .admin__field input[type="file"]{
   width:100%; font-size:.72rem; color:var(--mut);
 }
@@ -86,14 +175,6 @@
   border:2px solid var(--ink); background:var(--paper); color:var(--ink);
   padding:.4rem .7rem; margin-right:.7rem; font-size:.68rem; text-transform:uppercase; font-weight:700; cursor:pointer;
 }
-
-.admin__icons{
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:.5rem;
-  max-height:14rem; overflow-y:auto; border:2px solid var(--ink); padding:.5rem; background:var(--paper);
-}
-.admin__icon{position:relative; aspect-ratio:1/1; border:2px solid var(--ink); overflow:hidden; transition:.12s;}
-.admin__icon:hover{border-color:var(--indigo);}
-.admin__icon[aria-pressed="true"]{outline:3px solid var(--indigo); outline-offset:-3px;}
 
 .admin__ep{border:2px solid var(--ink); padding:.9rem; margin-bottom:.8rem; background:var(--paper);}
 .admin__ep-hd{display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;}
@@ -109,13 +190,6 @@
 
 .admin__hint{font-size:.68rem; color:var(--mut); align-self:center;}
 .admin__error{font-size:.72rem; font-weight:700; color:#b3261e; margin:.6rem 0 0;}
-
-.admin__logout{
-  background:none; border:none; padding:0; cursor:pointer;
-  font:inherit; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
-  text-decoration:underline; color:var(--mut);
-}
-.admin__logout:hover{color:var(--indigo);}
 
 /* tabs — vista de edición de un programa existente */
 .admin__tabs{display:flex; gap:.4rem; margin-bottom:1rem;}
@@ -148,9 +222,13 @@
   display:flex; align-items:center; justify-content:space-between; gap:1rem;
   border:2px solid var(--ink); background:var(--paper); padding:.8rem 1rem; margin-top:.6rem;
 }
-.admin__ep-list-row h4{margin:0; font-size:1.7rem;}
+.admin__ep-list-row h4{margin:0; font-size:1.3rem;}
 .admin__ep-list-row p{margin:.2rem 0 0; font-size:.75rem; color:var(--mut);}
 .admin__ep-list-tag{
   font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--mut);
   border:2px solid var(--ink); padding:.3rem .6rem; flex:none;
+}
+
+@media (max-width:760px){
+  .admin__row{grid-template-columns:1fr;}
 }

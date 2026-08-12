@@ -2,14 +2,37 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { verifyAdminSession } from "@/lib/data/auth";
-import type { ContenidoEpisodio } from "@/lib/programas";
+import { ICONO_PROGRAMA_DEFAULT, type ContenidoEpisodio } from "@/lib/programas";
 
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/admin/login");
+}
+
+async function origenSitio(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("host") ?? "";
+  const protocolo = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${protocolo}://${host}`;
+}
+
+// Dispara el correo de recuperación de Supabase Auth — el admin arma la
+// contraseña nueva en /admin/actualizar-contrasena, adonde apunta el link.
+// Nota: la URL de redirect tiene que estar en la allowlist de Supabase
+// (Authentication → URL Configuration → Redirect URLs) o Supabase la ignora.
+export async function solicitarCambioContrasena(): Promise<{ error: string } | undefined> {
+  const user = await verifyAdminSession();
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email!, {
+    redirectTo: `${await origenSitio()}/admin/actualizar-contrasena`,
+  });
+
+  if (error) return { error: "No se pudo enviar el correo. Probá de nuevo en unos minutos." };
 }
 
 type EpisodioInput = {
@@ -56,10 +79,43 @@ export async function subirAudioEpisodio(
   return { url: data.publicUrl };
 }
 
+const BUCKET_IMAGEN_PROGRAMA = "programas";
+const EXT_IMG_POR_MIME: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+const MAX_IMG_BYTES = 5 * 1024 * 1024;
+
+export async function subirImagenPrograma(
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  await verifyAdminSession();
+
+  const archivo = formData.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    return { error: "Elegí una imagen." };
+  }
+
+  const ext = EXT_IMG_POR_MIME[archivo.type];
+  if (!ext) return { error: "La imagen debe ser PNG, JPG o WEBP." };
+  if (archivo.size > MAX_IMG_BYTES) return { error: "La imagen no puede pesar más de 5MB." };
+
+  const supabase = await createClient();
+  const nombreArchivo = `${crypto.randomUUID()}.${ext}`;
+  const { error: errorSubida } = await supabase.storage.from(BUCKET_IMAGEN_PROGRAMA).upload(nombreArchivo, archivo, {
+    contentType: archivo.type,
+  });
+  if (errorSubida) return { error: "No se pudo subir la imagen." };
+
+  const { data } = supabase.storage.from(BUCKET_IMAGEN_PROGRAMA).getPublicUrl(nombreArchivo);
+  return { url: data.publicUrl };
+}
+
 type ProgramaInput = {
   titulo: string;
   descripcion: string;
-  icono: string;
+  icono: string | null;
   radialistaId: string;
   episodios: EpisodioInput[];
 };
@@ -75,8 +131,8 @@ type ActionResult = { error: string } | undefined;
 
 export async function crearPrograma(input: ProgramaInput): Promise<ActionResult> {
   await verifyAdminSession();
-  if (!input.titulo.trim() || !input.icono) {
-    return { error: "Falta título o ícono." };
+  if (!input.titulo.trim()) {
+    return { error: "Falta el título." };
   }
   if (!input.radialistaId) {
     return { error: "Falta asignar un radialista." };
@@ -89,7 +145,7 @@ export async function crearPrograma(input: ProgramaInput): Promise<ActionResult>
     .insert({
       titulo: input.titulo.trim(),
       descripcion: input.descripcion,
-      icono: input.icono,
+      icono: input.icono || ICONO_PROGRAMA_DEFAULT,
       radialista_id: input.radialistaId,
     })
     .select("id")
@@ -110,9 +166,9 @@ export async function crearPrograma(input: ProgramaInput): Promise<ActionResult>
     if (errorEpisodios) return { error: "El programa se creó, pero fallaron los episodios." };
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/programas");
   revalidatePath("/");
-  redirect("/admin");
+  redirect("/admin/programas");
 }
 
 export async function actualizarPrograma(
@@ -140,8 +196,32 @@ export async function actualizarPrograma(
 
   if (error) return { error: "No se pudo guardar el programa." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/programas");
   revalidatePath(`/admin/programas/${id}`);
+  revalidatePath("/");
+}
+
+export async function eliminarPrograma(id: string): Promise<ActionResult> {
+  await verifyAdminSession();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("programas").delete().eq("id", id);
+  if (error) return { error: "No se pudo eliminar el programa." };
+
+  revalidatePath("/admin/programas");
+  revalidatePath("/");
+  redirect("/admin/programas");
+}
+
+export async function eliminarEpisodio(id: string, programaId: string): Promise<ActionResult> {
+  await verifyAdminSession();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("episodios").delete().eq("id", id);
+  if (error) return { error: "No se pudo eliminar el episodio." };
+
+  revalidatePath("/admin/programas");
+  revalidatePath(`/admin/programas/${programaId}`);
   revalidatePath("/");
 }
 
@@ -162,7 +242,7 @@ export async function crearEpisodio(programaId: string, episodio: EpisodioInput)
 
   if (error) return { error: "No se pudo crear el episodio." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/programas");
   revalidatePath(`/admin/programas/${programaId}`);
   revalidatePath("/");
   redirect(`/admin/programas/${programaId}?tab=episodios`);

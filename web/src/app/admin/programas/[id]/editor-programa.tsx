@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { actualizarPrograma } from "../../actions";
+import { useRouter } from "next/navigation";
+import { actualizarPrograma, eliminarEpisodio, eliminarPrograma } from "../../actions";
 import { CamposPrograma, cx } from "../../shared";
+import { ConfirmDialog } from "../../confirm-dialog";
 import type { Programa } from "@/lib/programas";
 import type { Radialista } from "@/lib/radialistas";
 
@@ -18,6 +20,7 @@ export function EditorPrograma({
   radialistas: Radialista[];
   tabInicial: Tab;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>(tabInicial);
   const [titulo, setTitulo] = useState(programa.titulo);
   const [descripcion, setDescripcion] = useState(programa.descripcion);
@@ -26,6 +29,11 @@ export function EditorPrograma({
   const [avisoPrograma, setAvisoPrograma] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [eliminandoPrograma, setEliminandoPrograma] = useState(false);
+  const [confirmarEliminarPrograma, setConfirmarEliminarPrograma] = useState(false);
+  const [eliminandoEpisodioId, setEliminandoEpisodioId] = useState<string | null>(null);
+  const [episodioAEliminar, setEpisodioAEliminar] = useState<{ id: string; nombre: string } | null>(null);
+  const [errorEpisodios, setErrorEpisodios] = useState<string | null>(null);
 
   async function guardarPrograma() {
     if (!titulo.trim() || !icono || !radialistaId) return;
@@ -46,13 +54,41 @@ export function EditorPrograma({
     setTimeout(() => setAvisoPrograma(false), 2000);
   }
 
+  async function confirmarEliminarProgramaAhora() {
+    setError(null);
+    setEliminandoPrograma(true);
+    const resultado = await eliminarPrograma(programa.id);
+    // Si todo salió bien, eliminarPrograma ya redirigió — esta línea no corre.
+    if (resultado?.error) {
+      setError(resultado.error);
+      setEliminandoPrograma(false);
+      setConfirmarEliminarPrograma(false);
+    }
+  }
+
+  async function confirmarEliminarEpisodioAhora() {
+    if (!episodioAEliminar) return;
+    setErrorEpisodios(null);
+    setEliminandoEpisodioId(episodioAEliminar.id);
+    const resultado = await eliminarEpisodio(episodioAEliminar.id, programa.id);
+    setEliminandoEpisodioId(null);
+    setEpisodioAEliminar(null);
+    if (resultado?.error) {
+      setErrorEpisodios(resultado.error);
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">{programa.titulo}</h2>
-        <Link href="/admin" className="admin__btn admin__btn--ghost">
-          ← Volver
-        </Link>
+        <div className="admin__section-hd-left">
+          <Link href="/admin/programas" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">{programa.titulo}</h2>
+        </div>
       </div>
 
       <div className="admin__tabs">
@@ -80,6 +116,14 @@ export function EditorPrograma({
             />
             {error && <p className="admin__error">{error}</p>}
             <div className="admin__wizard-nav">
+              <button
+                type="button"
+                onClick={() => setConfirmarEliminarPrograma(true)}
+                disabled={eliminandoPrograma}
+                className="admin__ep-remove"
+              >
+                {eliminandoPrograma ? "Eliminando…" : "Eliminar programa"}
+              </button>
               {avisoPrograma && <span className="admin__hint">✓ Guardado</span>}
               <div style={{ flex: 1 }} />
               <button
@@ -101,6 +145,8 @@ export function EditorPrograma({
               </Link>
             </div>
 
+            {errorEpisodios && <p className="admin__error">{errorEpisodios}</p>}
+
             {programa.episodios.length === 0 ? (
               <p className="admin__ep-list-empty">Este programa todavía no tiene episodios.</p>
             ) : (
@@ -110,13 +156,43 @@ export function EditorPrograma({
                     <h4 className="admin__heading">{e.nombre}</h4>
                     <p>{e.descripcion || e.duracion}</p>
                   </div>
-                  <span className="admin__ep-list-tag">{e.contenido.tipo === "archivo" ? "Archivo" : "SoundCloud"}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".8rem", flex: "none" }}>
+                    <span className="admin__ep-list-tag">
+                      {e.contenido.tipo === "archivo" ? "Archivo" : "SoundCloud"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEpisodioAEliminar({ id: e.id, nombre: e.nombre })}
+                      disabled={eliminandoEpisodioId === e.id}
+                      className="admin__ep-remove"
+                    >
+                      {eliminandoEpisodioId === e.id ? "Eliminando…" : "Eliminar"}
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmarEliminarPrograma}
+        title="Eliminar programa"
+        message={`¿Eliminar el programa "${programa.titulo}"? Se van a borrar también sus ${programa.episodios.length} episodio${programa.episodios.length === 1 ? "" : "s"}. Esta acción no se puede deshacer.`}
+        pending={eliminandoPrograma}
+        onCancel={() => setConfirmarEliminarPrograma(false)}
+        onConfirm={confirmarEliminarProgramaAhora}
+      />
+
+      <ConfirmDialog
+        open={!!episodioAEliminar}
+        title="Eliminar episodio"
+        message={`¿Eliminar el episodio "${episodioAEliminar?.nombre}"? Esta acción no se puede deshacer.`}
+        pending={!!episodioAEliminar && eliminandoEpisodioId === episodioAEliminar.id}
+        onCancel={() => setEpisodioAEliminar(null)}
+        onConfirm={confirmarEliminarEpisodioAhora}
+      />
     </div>
   );
 }

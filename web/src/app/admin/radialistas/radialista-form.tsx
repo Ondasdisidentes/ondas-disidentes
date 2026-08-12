@@ -3,14 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ICONOS_DISPONIBLES } from "@/lib/programas";
-import type { Radialista } from "@/lib/radialistas";
+import { RADIALISTA_FOTO_DEFAULT, type Radialista } from "@/lib/radialistas";
 import { actualizarRadialista, crearRadialista, eliminarRadialista } from "../radialistas-actions";
+import { ConfirmDialog } from "../confirm-dialog";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const PREFIJO_SUBIDA = `${SUPABASE_URL}/storage/v1/object/public/panelistas/`;
-
-type Tipo = "subida" | "icono";
+type Tipo = "default" | "personalizado";
 
 const TIPOS_PERMITIDOS = ["image/png", "image/jpeg", "image/webp"];
 
@@ -35,16 +32,31 @@ function validarDimensiones(file: File): Promise<boolean> {
 export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
   const router = useRouter();
   const esEdicion = Boolean(radialista);
-  const esSubidaActual = Boolean(radialista && radialista.fotoUrl.startsWith(PREFIJO_SUBIDA));
+  const tieneFotoPropia = Boolean(radialista && radialista.fotoUrl !== RADIALISTA_FOTO_DEFAULT);
 
   const [nombre, setNombre] = useState(radialista?.nombre ?? "");
   const [localidad, setLocalidad] = useState(radialista?.localidad ?? "");
-  const [tipo, setTipo] = useState<Tipo>(!radialista || esSubidaActual ? "subida" : "icono");
+  const [tipo, setTipo] = useState<Tipo>(tieneFotoPropia ? "personalizado" : "default");
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(radialista?.fotoUrl ?? null);
-  const [icono, setIcono] = useState<string | null>(radialista && !esSubidaActual ? radialista.fotoUrl : null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    tieneFotoPropia ? radialista!.fotoUrl : null
+  );
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+
+  function seleccionarDefault() {
+    setTipo("default");
+    setError(null);
+    setArchivo(null);
+    setPreviewUrl(null);
+  }
+
+  function seleccionarPersonalizado() {
+    setTipo("personalizado");
+    setError(null);
+    if (!archivo) setPreviewUrl(tieneFotoPropia ? radialista!.fotoUrl : null);
+  }
 
   async function onArchivoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
@@ -74,14 +86,6 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
 
   async function handleGuardar() {
     if (!nombre.trim()) return;
-    if (tipo === "subida" && !archivo && !(esEdicion && esSubidaActual)) {
-      setError("Subí una foto.");
-      return;
-    }
-    if (tipo === "icono" && !icono) {
-      setError("Elegí un ícono.");
-      return;
-    }
 
     setError(null);
     setEnviando(true);
@@ -90,8 +94,7 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
     formData.set("nombre", nombre.trim());
     formData.set("localidad", localidad.trim());
     formData.set("tipo", tipo);
-    if (tipo === "subida" && archivo) formData.set("foto", archivo);
-    if (tipo === "icono" && icono) formData.set("icono", icono);
+    if (tipo === "personalizado" && archivo) formData.set("foto", archivo);
 
     const resultado = radialista
       ? await actualizarRadialista(radialista.id, formData)
@@ -107,22 +110,24 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
 
   async function handleEliminar() {
     if (!radialista) return;
-    if (!window.confirm(`¿Eliminar a ${radialista.nombre} de radialistas?`)) return;
     setEnviando(true);
     const resultado = await eliminarRadialista(radialista.id);
     if (resultado?.error) {
       setError(resultado.error);
       setEnviando(false);
+      setConfirmarEliminar(false);
     }
   }
 
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">{esEdicion ? radialista!.nombre : "Agregar radialista"}</h2>
-        <Link href="/admin/radialistas" className="admin__btn admin__btn--ghost">
-          Cancelar
-        </Link>
+        <div className="admin__section-hd-left">
+          <Link href="/admin/radialistas" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">{esEdicion ? radialista!.nombre : "Agregar radialista"}</h2>
+        </div>
       </div>
 
       <div className="admin__form">
@@ -146,42 +151,38 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
             Foto
           </span>
           <div className="admin__toggle">
-            <button type="button" onClick={() => setTipo("subida")} aria-pressed={tipo === "subida"}>
-              Subir foto
+            <button type="button" onClick={seleccionarDefault} aria-pressed={tipo === "default"}>
+              Por defecto
             </button>
-            <button type="button" onClick={() => setTipo("icono")} aria-pressed={tipo === "icono"}>
-              Elegir ícono
+            <button type="button" onClick={seleccionarPersonalizado} aria-pressed={tipo === "personalizado"}>
+              Personalizado
             </button>
           </div>
 
-          {tipo === "subida" ? (
-            <label className="admin__field" style={{ marginTop: ".5rem" }}>
-              {esEdicion && esSubidaActual && !archivo && (
-                <span className="admin__hint">Ya tiene una foto subida — elegí un archivo para reemplazarla.</span>
-              )}
-              <input key="foto" type="file" accept="image/png,image/jpeg,image/webp" onChange={onArchivoChange} />
-            </label>
-          ) : (
-            <div className="admin__icons" style={{ marginTop: ".5rem" }}>
-              {ICONOS_DISPONIBLES.map((src) => (
-                <button
-                  key={src}
-                  type="button"
-                  onClick={() => setIcono(src)}
-                  className="admin__icon"
-                  aria-label={`Elegir ${src}`}
-                  aria-pressed={icono === src}
-                  style={{ backgroundImage: `url(${src})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                />
-              ))}
-            </div>
-          )}
-
-          {previewUrl && (
-            <div className="admin__thumb" style={{ marginTop: ".7rem" }}>
+          {tipo === "default" ? (
+            <div className="admin__thumb admin__thumb--lg" style={{ marginTop: ".6rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={RADIALISTA_FOTO_DEFAULT}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
+          ) : (
+            <>
+              <label className="admin__field" style={{ marginTop: ".6rem" }}>
+                {esEdicion && tieneFotoPropia && !archivo && (
+                  <span className="admin__hint">Ya tenés una foto — elegí un archivo para reemplazarla.</span>
+                )}
+                <input key="foto" type="file" accept="image/png,image/jpeg,image/webp" onChange={onArchivoChange} />
+              </label>
+              {previewUrl && (
+                <div className="admin__thumb admin__thumb--lg" style={{ marginTop: ".6rem" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -189,7 +190,12 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
 
         <div className="admin__wizard-nav">
           {esEdicion && (
-            <button type="button" onClick={handleEliminar} disabled={enviando} className="admin__ep-remove">
+            <button
+              type="button"
+              onClick={() => setConfirmarEliminar(true)}
+              disabled={enviando}
+              className="admin__ep-remove"
+            >
               Eliminar radialista
             </button>
           )}
@@ -199,6 +205,17 @@ export function RadialistaForm({ radialista }: { radialista?: Radialista }) {
           </button>
         </div>
       </div>
+
+      {radialista && (
+        <ConfirmDialog
+          open={confirmarEliminar}
+          title="Eliminar radialista"
+          message={`¿Eliminar a ${radialista.nombre} de radialistas? Esta acción no se puede deshacer.`}
+          pending={enviando}
+          onCancel={() => setConfirmarEliminar(false)}
+          onConfirm={handleEliminar}
+        />
+      )}
     </div>
   );
 }

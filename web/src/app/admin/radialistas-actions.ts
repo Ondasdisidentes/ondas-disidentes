@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { verifyAdminSession } from "@/lib/data/auth";
 import { getRadialista } from "@/lib/data/radialistas";
-import type { Radialista } from "@/lib/radialistas";
+import { RADIALISTA_FOTO_DEFAULT, type Radialista } from "@/lib/radialistas";
 
 type ActionResult = { error: string } | undefined;
 
@@ -28,17 +28,15 @@ async function resolverFotoUrl(
 ): Promise<{ fotoUrl: string } | { error: string }> {
   const tipo = String(formData.get("tipo") ?? "");
 
-  if (tipo === "icono") {
-    const icono = String(formData.get("icono") ?? "");
-    if (!icono) return { error: "Elegí un ícono." };
-    return { fotoUrl: icono };
+  if (tipo === "default") {
+    return { fotoUrl: RADIALISTA_FOTO_DEFAULT };
   }
 
   const foto = formData.get("foto");
   if (!(foto instanceof File) || foto.size === 0) {
-    // Modo edición sin foto nueva: se mantiene la actual tal cual.
-    if (fotoActual) return { fotoUrl: fotoActual };
-    return { error: "Subí una foto." };
+    // "Personalizado" sin archivo nuevo: en edición se mantiene la foto
+    // actual tal cual; al crear, sin nada elegido, se usa la default.
+    return { fotoUrl: fotoActual || RADIALISTA_FOTO_DEFAULT };
   }
 
   const ext = EXT_POR_MIME[foto.type];

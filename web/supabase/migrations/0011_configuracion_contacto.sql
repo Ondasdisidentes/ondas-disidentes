@@ -15,6 +15,8 @@ create table public.configuracion_contacto (
   instagram text,
   facebook text,
   soundcloud text,
+  tiktok text,
+  youtube text,
   updated_at timestamptz not null default now(),
   constraint configuracion_contacto_singleton check (id)
 );

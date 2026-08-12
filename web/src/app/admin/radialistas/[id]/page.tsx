@@ -13,7 +13,7 @@ export default async function EditarRadialistaPage({ params }: { params: Promise
       <div>
         <p>No se encontró este radialista.</p>
         <Link href="/admin/radialistas" className="admin__btn admin__btn--ghost">
-          ← Volver a radialistas
+          ← Atrás
         </Link>
       </div>
     );

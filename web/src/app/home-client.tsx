@@ -114,6 +114,8 @@ export default function HomeClient({
     { label: "Instagram", href: contacto.instagram || null },
     { label: "Facebook", href: contacto.facebook || null },
     { label: "SoundCloud", href: contacto.soundcloud || null },
+    { label: "TikTok", href: contacto.tiktok || null },
+    { label: "YouTube", href: contacto.youtube || null },
   ];
   const contactoItems: { label: string; href: string | null }[] = [
     { label: contacto.email || "Email", href: contacto.email ? `mailto:${contacto.email}` : null },
@@ -848,7 +850,7 @@ export default function HomeClient({
                       <span className={"proglist__thumb"}>
                         <img src={p.icono} alt="" />
                       </span>
-                      <span className={cx("proglist__title", "hum")}>{soloPrimeraMayuscula(p.titulo)}</span>
+                      <span className={"proglist__title"}>{soloPrimeraMayuscula(p.titulo)}</span>
                       {abierto && <span className={"proglist__chev"} aria-hidden="true">⌄</span>}
                     </button>
                     {abierto && (

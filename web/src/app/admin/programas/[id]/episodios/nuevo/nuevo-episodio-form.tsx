@@ -48,10 +48,12 @@ export function NuevoEpisodioForm({
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Añadir episodio</h2>
-        <Link href={`/admin/programas/${programaId}?tab=episodios`} className="admin__btn admin__btn--ghost">
-          Cancelar
-        </Link>
+        <div className="admin__section-hd-left">
+          <Link href={`/admin/programas/${programaId}?tab=episodios`} className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">Añadir episodio</h2>
+        </div>
       </div>
       <p className="lbl" style={{ display: "block", marginBottom: "1rem" }}>
         Programa: {programaTitulo}

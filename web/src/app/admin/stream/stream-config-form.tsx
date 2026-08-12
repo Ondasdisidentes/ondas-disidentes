@@ -1,8 +1,58 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { StreamConfig } from "@/lib/data/stream-config";
 import { actualizarConfigStream } from "../stream-actions";
+
+function IconCopy() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+      <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CampoIcecast({ label, value }: { label: string; value: string }) {
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      // Clipboard API puede fallar sin permisos — no rompemos la UI por eso,
+      // el campo sigue siendo seleccionable/copiable a mano.
+    }
+  }
+
+  return (
+    <label className="admin__field">
+      <span>{label}</span>
+      <div className="admin__copyfield">
+        <input value={value} readOnly onFocus={(e) => e.target.select()} />
+        <button
+          type="button"
+          className={`admin__copybtn${copiado ? " is-copied" : ""}`}
+          onClick={copiar}
+          aria-label={copiado ? `${label} copiado` : `Copiar ${label}`}
+        >
+          {copiado ? <IconCheck /> : <IconCopy />}
+        </button>
+      </div>
+    </label>
+  );
+}
 
 export function StreamConfigForm({ config }: { config: StreamConfig }) {
   const [statusUrl, setStatusUrl] = useState(config.statusUrl);
@@ -34,7 +84,12 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
   return (
     <div>
       <div className="admin__section-hd">
-        <h2 className="admin__heading">Transmisión en vivo (giss.tv)</h2>
+        <div className="admin__section-hd-left">
+          <Link href="/admin" className="admin__btn admin__btn--ghost">
+            ← Atrás
+          </Link>
+          <h2 className="admin__heading">Transmisión en vivo (giss.tv)</h2>
+        </div>
       </div>
 
       <div className="admin__form">
@@ -82,6 +137,31 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
             {enviando ? "Guardando…" : "Guardar cambios"}
           </button>
         </div>
+      </div>
+
+      <div className="admin__form" style={{ marginTop: "1.5rem" }}>
+        <h3 className="admin__heading" style={{ fontSize: "1.3rem", margin: "0 0 .6rem" }}>
+          Servidor Icecast (dato de Giss)
+        </h3>
+        <p className="admin__hint" style={{ display: "block", marginBottom: "1rem" }}>
+          Para configurar el encoder (ej. Mixxx) al transmitir — no se usa en el sitio ni se guarda en la
+          base de datos, es solo referencia fija de lo que dio Giss. Los campos son de solo lectura, hacé
+          clic y copiá.
+        </p>
+
+        <div className="admin__row">
+          <CampoIcecast label="Server" value="giss.tv" />
+          <CampoIcecast label="Port" value="8001" />
+        </div>
+
+        <div className="admin__row">
+          <CampoIcecast label="Mountpoint" value="ondasdisidentes.mp3" />
+          <CampoIcecast label="User" value="source" />
+        </div>
+
+        <CampoIcecast label="Password" value="1bcwr" />
+        <CampoIcecast label="URL (http)" value="http://giss.tv:8001/ondasdisidentes.mp3" />
+        <CampoIcecast label="URL (https)" value="https://giss.tv:667/ondasdisidentes.mp3" />
       </div>
     </div>
   );

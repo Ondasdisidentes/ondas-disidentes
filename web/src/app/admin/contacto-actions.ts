@@ -27,6 +27,8 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
   const instagram = String(formData.get("instagram") ?? "").trim();
   const facebook = String(formData.get("facebook") ?? "").trim();
   const soundcloud = String(formData.get("soundcloud") ?? "").trim();
+  const tiktok = String(formData.get("tiktok") ?? "").trim();
+  const youtube = String(formData.get("youtube") ?? "").trim();
 
   if (email && !EMAIL_RE.test(email)) {
     return { error: "El email de contacto no es válido." };
@@ -43,6 +45,12 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
   if (soundcloud && !urlValida(soundcloud)) {
     return { error: "El link de SoundCloud debe ser una URL https válida." };
   }
+  if (tiktok && !urlValida(tiktok)) {
+    return { error: "El link de TikTok debe ser una URL https válida." };
+  }
+  if (youtube && !urlValida(youtube)) {
+    return { error: "El link de YouTube debe ser una URL https válida." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -53,6 +61,8 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
       instagram: instagram || null,
       facebook: facebook || null,
       soundcloud: soundcloud || null,
+      tiktok: tiktok || null,
+      youtube: youtube || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);
