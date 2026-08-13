@@ -435,7 +435,7 @@ export default function HomeClient({
                     Cada una hace su propio programa: elige el tema, la audiencia y el idioma, y lo produce, lo
                     conduce y lo edita ella misma. Se escucha por internet, desde donde sea
                   </p>
-                  <button className={"cta"} onClick={() => openPrograma(0, true)}>
+                  <button className={"cta"} onClick={() => (isLive ? openPrograma(0, true) : openPrograma(-1))}>
                     <span aria-hidden="true">►</span>Escuchar ahora
                   </button>
                 </div>
