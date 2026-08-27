@@ -5,9 +5,10 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Solo las de licencia comercial, que no se versionan. Si falta alguna de las
+// que pide next/font/local en src/app/fonts.ts, el build revienta al no
+// encontrar el .otf. Warsaw Gothic NO va acá: es OFL y viaja en el repo.
 const FONTS = [
-  "FixtureUltra-SemiBold.otf",
-  "FixtureUltra-Bold.otf",
   "Humane-Bold.otf",
   "Konsens-Regular.otf",
   "Konsens-Bold.otf",

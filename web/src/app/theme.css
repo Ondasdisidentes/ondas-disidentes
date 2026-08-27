@@ -12,7 +12,8 @@
   --mut:#75716a;
   --gutter: clamp(1.3rem,3.5vw,2.6rem);
   --f-disp: var(--font-humane), 'Arial Narrow', Impact, sans-serif;
-  --f-tit: var(--font-fixture-ultra), 'Arial Narrow', Impact, sans-serif;
+  --f-tit: var(--font-warsaw-cond), 'Arial Narrow', Impact, sans-serif;
+  --f-tit-word: .05em;
   --f-body: var(--font-konsens), Arial, Helvetica, sans-serif;
 }
 *{box-sizing:border-box;}
@@ -21,8 +22,12 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 img{display:block; user-select:none; -webkit-user-drag:none;}
 ::selection{background:var(--indigo); color:var(--paper);}
 :focus-visible{outline:3px solid var(--indigo); outline-offset:2px;}
-.fix{font-family:var(--f-tit); font-weight:700; letter-spacing:.01em; text-transform:uppercase;}
+/* Warsaw Gothic Condensed trae el glifo de espacio en 0.015em, nueve veces más
+   angosto de lo normal: sin corregirlo las palabras se pegan y los títulos se
+   leen como una sola. --f-tit-word lo compensa hasta una proporción
+   espacio/ancho-de-H de 0.28. Subilo o bajalo acá y aplica a todos los títulos. */
+.fix{font-family:var(--f-tit); font-weight:400; letter-spacing:.01em; word-spacing:var(--f-tit-word); text-transform:uppercase;}
 .hum{font-family:var(--f-disp); font-weight:700; letter-spacing:.005em; text-transform:uppercase;}
 .lbl{font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--mut); font-weight:700;}
 .hm{font-family:var(--f-disp); letter-spacing:.005em;}
-.fx{font-family:var(--f-tit); letter-spacing:.01em;}
+.fx{font-family:var(--f-tit); font-weight:400; letter-spacing:.01em; word-spacing:var(--f-tit-word);}

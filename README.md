@@ -6,16 +6,27 @@ Arquitectura completa y decisiones del proyecto: [docs/DOCUMENTO_MAESTRO.md](doc
 
 ## Desarrollo local
 
-Las fuentes de marca están fuera de git (licencia comercial), así que hay que copiarlas antes de levantar el sitio:
+Warsaw Gothic (la tipografía de títulos) viaja en el repo: es SIL OFL 1.1, así que
+se puede redistribuir y embeber. Humane y Konsens son de licencia comercial y no se
+versionan, así que hay que copiarlas a mano antes de levantar el sitio:
 
 ```bash
 mkdir -p web/public/fonts
 cp assets/fuentes/Humane-Bold.otf web/public/fonts/
-cp assets/fuentes/Fixture-Ultra-Bold.otf web/public/fonts/FixtureUltra-Bold.otf
-cp assets/fuentes/Fixture-Ultra-SemiBold.otf web/public/fonts/FixtureUltra-SemiBold.otf
 cp assets/fuentes/Konsens/otf/KonsensRegular.otf web/public/fonts/Konsens-Regular.otf
 cp assets/fuentes/Konsens/otf/KonsensBold.otf web/public/fonts/Konsens-Bold.otf
 ```
+
+En producción, `scripts/fetch-fonts.mjs` corre como `prebuild` y baja esas dos desde
+Supabase Storage (bucket `fonts`), para lo que Vercel necesita `NEXT_PUBLIC_SUPABASE_URL`
+y `SUPABASE_SERVICE_ROLE_KEY`. Warsaw Gothic no está en esa lista porque ya está en el
+repo. Si agregás una fuente nueva a `src/app/fonts.ts`, acordate de sumarla al script o
+al `.gitignore` según su licencia: si falta, el build de Vercel falla al no encontrar el `.otf`.
+
+Warsaw Gothic Condensed es una sola cara estática de peso 400: no tiene negrita ni
+versión variable. Por eso `.fix`/`.fx` en `theme.css` piden `font-weight:400` y no
+`700` — pedir negrita haría que el navegador sintetice una falsa. Su glifo de espacio
+viene nueve veces más angosto de lo normal, compensado con `--f-tit-word`.
 
 Luego:
 

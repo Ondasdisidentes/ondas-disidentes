@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { humane, fixtureUltra, konsens } from "./fonts";
+import { humane, warsawGothicCond, konsens } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${humane.variable} ${fixtureUltra.variable} ${konsens.variable}`}
+      className={`${humane.variable} ${warsawGothicCond.variable} ${konsens.variable}`}
     >
       <head>
         <style>{`

@@ -14,4 +14,10 @@ Thumbs.db
 
 # copia local de las mismas fuentes, usada por next/font/local en dev.
 # en producción se sirven desde Supabase Storage (pendiente de conectar).
-/web/public/fonts/
+/web/public/fonts/*
+# excepción: Warsaw Gothic es SIL OFL 1.1 (deriva de League Gothic), así que sí
+# se versiona. La OFL permite redistribuirla y embeberla siempre que la licencia
+# la acompañe — de ahí el .txt. Al estar en el repo, el build de producción no
+# necesita descargarla de Supabase.
+!/web/public/fonts/WarsawGothic-Condensed.otf
+!/web/public/fonts/OFL-WarsawGothic.txt

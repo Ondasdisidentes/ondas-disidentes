@@ -14,7 +14,7 @@ Este documento resume las decisiones de arquitectura tomadas y sirve como refere
   - `ondas-disidentes-base.html` — HTML base real del sitio, referencia de diseño/contenido a convertir a componentes React/Next.js; no se levanta ni se sirve tal cual, es punto de partida para la migración.
 - **`assets/`** — material de marca:
   - `ilustraciones/`, `logos/` — assets ya exportados que el sitio usa directamente (versionados en git).
-  - `fuentes/` (Humane, Fixture, Konsens en `.otf`), `plantillas/` (plantillas editables .ai/.docx), `manual-de-marca.pdf` — **excluidos de git** (`.gitignore`): las fuentes son de licencia comercial y no se redistribuyen en un repo público; las fuentes se sirven en el sitio desde Supabase Storage. El resto es material fuente de diseño, no un asset de producción.
+  - `fuentes/` (Humane, Konsens y Warsaw Gothic en `.otf`), `plantillas/` (plantillas editables .ai/.docx), `manual-de-marca.pdf` — **excluidos de git** (`.gitignore`): las fuentes son de licencia comercial y no se redistribuyen en un repo público; las fuentes se sirven en el sitio desde Supabase Storage. El resto es material fuente de diseño, no un asset de producción.
 - **`web/`** — la aplicación Next.js + React (el sitio en sí), se levanta con `npm run dev` dentro de esta carpeta.
 
 ---
@@ -104,7 +104,7 @@ El HTML base (`docs/ondas-disidentes-base.html`) ya está portado a `web/src/app
 
 - El sitio carga directo en la ventana de inicio (se quitó el gate/boot de entrada del diseño original). Menú, cambio entre las 3 ventanas (inicio/investigación/nosotrxs) y la consola de "programas" con interactividad real (estado de React).
 - Imágenes y el PDF del manifiesto, que en el HTML original estaban embebidos como base64, extraídos a archivos reales en `web/public/images/` y `web/public/docs/`.
-- Fuentes cargadas con `next/font/local` desde `web/public/fonts/` (ver `web/src/app/fonts.ts`) — esa carpeta está fuera de git (ver README, sección "Desarrollo local", para el paso manual de copiarlas).
+- Fuentes cargadas con `next/font/local` desde `web/public/fonts/` (ver `web/src/app/fonts.ts`) — esa carpeta está fuera de git (ver README, sección "Desarrollo local", para el paso manual de copiarlas). La tipografía de títulos es **Warsaw Gothic Condensed**, que reemplazó a Fixture Ultra el 2026-08-27 (hubo un paso intermedio por Podium Sharp Variable vía Adobe Fonts, descartado). Es una cara estática de peso 400, así que `.fix`/`.fx` usan `font-weight:400`: pedir `700` produciría negrita sintética.
 - Estilos portados casi sin cambios del CSS original (`web/src/app/ondas.css`, hoja global — no un CSS Module, porque Turbopack exige que todo selector de un CSS Module tenga una clase local, y este diseño depende de resets sobre `body`/`a`/`button`/`img`). Tailwind sigue disponible para el futuro dashboard, sin conflicto.
 
 **Deliberadamente NO conectado todavía** (statement explícito del alcance de esta fase, "sin funcionalidad"):

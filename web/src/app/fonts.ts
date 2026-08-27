@@ -12,12 +12,14 @@ export const humane = localFont({
   display: "swap",
 });
 
-export const fixtureUltra = localFont({
-  src: [
-    { path: "../../public/fonts/FixtureUltra-SemiBold.otf", weight: "600", style: "normal" },
-    { path: "../../public/fonts/FixtureUltra-Bold.otf", weight: "700", style: "normal" },
-  ],
-  variable: "--font-fixture-ultra",
+// Tipografía de títulos. Es una sola cara estática de peso 400 (no hay bold ni
+// versión variable), así que .fix/.fx en theme.css NO deben pedir font-weight:700:
+// el navegador sintetizaría una negrita falsa. Ver --f-tit.
+export const warsawGothicCond = localFont({
+  src: "../../public/fonts/WarsawGothic-Condensed.otf",
+  weight: "400",
+  style: "normal",
+  variable: "--font-warsaw-cond",
   display: "swap",
 });
 
