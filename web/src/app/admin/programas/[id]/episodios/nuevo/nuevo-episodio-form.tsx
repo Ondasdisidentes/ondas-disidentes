@@ -101,10 +101,10 @@ export function NuevoEpisodioForm({
             </button>
             <button
               type="button"
-              onClick={() => setEpisodio({ ...episodio, tipoContenido: "soundcloud" })}
-              aria-pressed={episodio.tipoContenido === "soundcloud"}
+              onClick={() => setEpisodio({ ...episodio, tipoContenido: "spotify" })}
+              aria-pressed={episodio.tipoContenido === "spotify"}
             >
-              Link de SoundCloud
+              Link de Spotify
             </button>
           </div>
 
@@ -127,10 +127,10 @@ export function NuevoEpisodioForm({
           ) : (
             <label className="admin__field" style={{ marginTop: ".5rem" }}>
               <input
-                key="soundcloud"
-                value={episodio.soundcloudUrl}
-                onChange={(e) => setEpisodio({ ...episodio, soundcloudUrl: e.target.value })}
-                placeholder="https://soundcloud.com/..."
+                key="spotify"
+                value={episodio.spotifyUrl}
+                onChange={(e) => setEpisodio({ ...episodio, spotifyUrl: e.target.value })}
+                placeholder="https://open.spotify.com/..."
               />
             </label>
           )}

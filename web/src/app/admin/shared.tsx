@@ -15,11 +15,11 @@ export type EpisodioForm = {
   nombre: string;
   descripcion: string;
   duracion: string;
-  tipoContenido: "archivo" | "soundcloud";
+  tipoContenido: "archivo" | "spotify";
   archivo: File | null;
   archivoActual: string;
   archivoUrl: string;
-  soundcloudUrl: string;
+  spotifyUrl: string;
 };
 
 export function nuevoEpisodioForm(): EpisodioForm {
@@ -32,7 +32,7 @@ export function nuevoEpisodioForm(): EpisodioForm {
     archivo: null,
     archivoActual: "",
     archivoUrl: "",
-    soundcloudUrl: "",
+    spotifyUrl: "",
   };
 }
 
@@ -46,7 +46,7 @@ export function episodioAForm(e: Episodio): EpisodioForm {
     archivo: null,
     archivoActual: e.contenido.tipo === "archivo" ? e.contenido.nombreArchivo : "",
     archivoUrl: e.contenido.tipo === "archivo" ? e.contenido.url : "",
-    soundcloudUrl: e.contenido.tipo === "soundcloud" ? e.contenido.url : "",
+    spotifyUrl: e.contenido.tipo === "spotify" ? e.contenido.url : "",
   };
 }
 
@@ -60,7 +60,7 @@ export function formAEpisodio(e: EpisodioForm): Episodio {
   const contenido: ContenidoEpisodio =
     e.tipoContenido === "archivo"
       ? { tipo: "archivo", nombreArchivo: e.archivo?.name ?? e.archivoActual, url: e.archivoUrl }
-      : { tipo: "soundcloud", url: e.soundcloudUrl };
+      : { tipo: "spotify", url: e.spotifyUrl };
   return {
     id: e.clave,
     nombre: e.nombre.trim() || "Episodio sin título",
@@ -500,10 +500,10 @@ function EpisodioFormRow(props: {
           </button>
           <button
             type="button"
-            onClick={() => onChange({ tipoContenido: "soundcloud" })}
-            aria-pressed={episodio.tipoContenido === "soundcloud"}
+            onClick={() => onChange({ tipoContenido: "spotify" })}
+            aria-pressed={episodio.tipoContenido === "spotify"}
           >
-            Link de SoundCloud
+            Link de Spotify
           </button>
         </div>
 
@@ -529,10 +529,10 @@ function EpisodioFormRow(props: {
         ) : (
           <label className="admin__field" style={{ marginTop: ".5rem" }}>
             <input
-              key="soundcloud"
-              value={episodio.soundcloudUrl}
-              onChange={(e) => onChange({ soundcloudUrl: e.target.value })}
-              placeholder="https://soundcloud.com/..."
+              key="spotify"
+              value={episodio.spotifyUrl}
+              onChange={(e) => onChange({ spotifyUrl: e.target.value })}
+              placeholder="https://open.spotify.com/..."
             />
           </label>
         )}

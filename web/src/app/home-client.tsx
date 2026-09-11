@@ -5,6 +5,7 @@ import "./ondas.css";
 import type { Programa } from "@/lib/programas";
 import type { Radialista } from "@/lib/radialistas";
 import type { ContactoConfig } from "@/lib/data/contacto";
+import type { EstilosConfig } from "@/lib/data/estilos";
 
 function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -29,9 +30,9 @@ const MESES = [
 
 const EQUIPO = [
   { nombre: "Fabiana Lobatón", rol: "Coordinación General" },
-  { nombre: "Brenda Villalba", rol: "Coordinación de Formación y Talleres" },
-  { nombre: "Fabricio Lobatón", rol: "Dirección Editorial e Investigación" },
-  { nombre: "Alejandra Góngora", rol: "Producción y Articulación Territorial" },
+  { nombre: "Brenda Villalba", rol: "Coordinación Editorial y de Investigación" },
+  { nombre: "Fabricio Lobatón", rol: "Coordinación de Formación y Talleres" },
+  { nombre: "Alejandra Góngora", rol: "Coordinación y Articulación Territorial" },
   { nombre: "Camila Morato", rol: "Diseño UX/UI" },
   { nombre: "Daniel Acero", rol: "Desarrollo Web" },
   { nombre: "Nicolás Safos Canedo", rol: "Redes Sociales" },
@@ -101,10 +102,12 @@ export default function HomeClient({
   programas,
   radialistas,
   contacto,
+  estilos,
 }: {
   programas: Programa[];
   radialistas: Radialista[];
   contacto: ContactoConfig;
+  estilos: EstilosConfig;
 }) {
   // Si el admin no cargó un dato en /admin/contacto, se muestra igual como
   // placeholder (label genérica, opacidad reducida vía "is-disabled") en vez
@@ -113,7 +116,7 @@ export default function HomeClient({
   const redesSociales: { label: string; href: string | null }[] = [
     { label: "Instagram", href: contacto.instagram || null },
     { label: "Facebook", href: contacto.facebook || null },
-    { label: "SoundCloud", href: contacto.soundcloud || null },
+    { label: "Spotify", href: contacto.spotify || null },
     { label: "TikTok", href: contacto.tiktok || null },
     { label: "YouTube", href: contacto.youtube || null },
   ];
@@ -347,7 +350,15 @@ export default function HomeClient({
   // el punto donde vuelve a empezar se nota) — y cada mitad tiene que ser más
   // ancha que la pantalla más ancha que vayamos a soportar, si no queda un
   // hueco en blanco antes de completar la vuelta.
-  const TICKER_FRASES = ["Al aire por internet", "En castellano y en quechua."];
+  // Editable desde /admin/estilos — una frase por línea. Si el admin la deja
+  // vacía (dato faltante en la base), cae a las frases originales en vez de
+  // dejar la cinta en blanco.
+  const tickerFrases = estilos.tickerTexto
+    .split("\n")
+    .map((f) => f.trim())
+    .filter(Boolean);
+  const TICKER_FRASES =
+    tickerFrases.length > 0 ? tickerFrases : ["Al aire por internet", "En castellano y en quechua."];
   const TICKER_REPS_POR_MITAD = 7;
   const tickerMitad = Array.from({ length: TICKER_REPS_POR_MITAD }, () => TICKER_FRASES).flat();
   const tickerText = [...tickerMitad, ...tickerMitad].flatMap((frase, i) => [
@@ -430,10 +441,10 @@ export default function HomeClient({
 
               <section className={"hero"}>
                 <div className={"hero__left"}>
-                  <p className={"slogan"}>Somos una radio alternativa que da voz a radialistas comunitarias.</p>
+                  <p className={"slogan"}>Somos una radio alternativa hecha por nosotrxs, desde nuestros territorios</p>
                   <p className={"hero__sub"}>
-                    Cada una hace su propio programa: elige el tema, la audiencia y el idioma, y lo produce, lo
-                    conduce y lo edita ella misma. Se escucha por internet, desde donde sea
+                    Elegimos el tema, la audiencia y el idioma de nuestros programas. Lo producimos, lo conducimos y
+                    lo editamos nosotrxs. Nos escuchás por internet, desde donde estés.
                   </p>
                   <button className={"cta"} onClick={() => (isLive ? openPrograma(0, true) : openPrograma(-1))}>
                     <span aria-hidden="true">►</span>Escuchar ahora
@@ -501,16 +512,16 @@ export default function HomeClient({
                   <img className={"manif__banner-title"} src="/images/manifiesto-titulo-banner.webp" alt="Manifiesto" />
                 </div>
                 <div className={"manif__text"}>
-                  <h3 className={"manif__lead"}>Entendemos la comunicación como acción comunitaria.</h3>
+                  <h3 className={"manif__lead"}>ENTENDEMOS LA COMUNICACIÓN DESDE LO COMÚN</h3>
                   <p>
-                    Trabajamos por una comunicación del común, medios comunitarios, proximidad y acción.
+                    Somos una red que se hace comunidad al comunicar.
                   </p>
                   <p className={"manif__body"}>
-                    Ondas Disidentes es una red de veinte radialistas comunitarias del Valle Alto y el Cercado
-                    de Cochabamba. Sostenemos una señal en línea permanente, en castellano y quechua, con
-                    programación producida íntegramente por mujeres desde sus propios barrios: derechos y
-                    acceso a la justicia, autonomía económica, migración interna, lenguas originarias, memoria
-                    de las pioneras de la radio y cobertura de la violencia machista desde una mirada feminista.
+                    Mantenemos una señal en línea, en castellano y quechua, desde el Cercado y el Valle Alto de
+                    Cochabamba. Ahí contamos lo que en otros medios no entra, como derechos y acceso a la
+                    justicia, autonomía económica, migración interna, lenguas originarias, memoria de las
+                    pioneras de la radio y violencia machista, siempre desde una mirada disidente. También
+                    sumamos programas que llegan de otras partes del país y el mundo.
                   </p>
                   <div className={"manif__btns"}>
                     <button
@@ -644,11 +655,12 @@ export default function HomeClient({
                 <div className={"qsomos__left"}>
                   <img className={"qsomos__badge"} src="/images/que-somos-badge.webp" alt="Qué somos" />
                   <h2 className={"qsomos__title"}>
-                    Una radio alternativa hecha por radialistas comunitarias
+                    Una radio alternativa, donde las ondas son de todxs. Súmate a la señal.
                   </h2>
                   <p className={"qsomos__desc"}>
-                    Trabajan en sus barrios, sus mercados y sus comunidades, ya saben hacer radio, y acá
-                    tienen una señal donde poner al aire lo suyo.
+                    Abordamos historias desde nuestros propios contextos, las producimos y las ponemos al
+                    aire. Así, estamos transformando las ondas radiales en herramientas de cambio social a
+                    través de la narrativa.
                   </p>
                 </div>
                 <div className={"qsomos__right"}>
@@ -676,11 +688,12 @@ export default function HomeClient({
                 <div className={"porque__left"}>
                   <img className={"porque__badge"} src="/images/porque-badge.webp" alt="Por qué" />
                   <h2 className={"porque__title"}>
-                    La mayoría de las emisoras de la región están dirigidas por hombres.
+                    PARA TOMAR EL ARCHIVO
                   </h2>
                   <p className={"porque__desc"}>
-                    Y en casi todas las mujeres aparecen como tema y no como quien habla. Ondas
-                    Disidentes existe para cambiar eso.
+                    Antes de eso, no hay un comienzo. Hay programas que se pierden apenas salen al
+                    aire, y grabaciones viejas repartidas, sin techo, sin quien las junte.
+                    Apoderarse del archivo es apoderarse del origen.
                   </p>
                 </div>
                 <div className={"porque__right"}>
@@ -721,8 +734,8 @@ export default function HomeClient({
                   <div className={"equipo__foot-txt"}>
                     <span className={"equipo__foot-lbl"}>Con el apoyo de</span>
                     <p>
-                      Ondas Disidentes es una iniciativa del Colectivo Ñaña, con el apoyo de la Fundación
-                      Apthapi Jopueti, Fondo de Mujeres Bolivia.
+                      Ondas Disidentes es una iniciativa independiente sin fines de lucro con el apoyo de
+                      Colectivo Ñañas y la Fundación Apthapi Jopueti, Fondo de Mujeres Bolivia.
                     </p>
                   </div>
                   <img
@@ -982,9 +995,9 @@ export default function HomeClient({
                 <span className={"player__livelbl"}>En vivo</span>
                 <span className={"player__time"}>{formatearTiempo(vivoTiempo)}</span>
               </div>
-            ) : contenidoReproduccion?.tipo === "soundcloud" ? (
+            ) : contenidoReproduccion?.tipo === "spotify" ? (
               <a className={"player__sc"} href={contenidoReproduccion.url} target="_blank" rel="noreferrer">
-                Escuchar en SoundCloud ↗
+                Escuchar en Spotify ↗
               </a>
             ) : audioUrlReproduccion ? (
               <div className={"player__controls"}>

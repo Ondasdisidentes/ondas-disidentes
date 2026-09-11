@@ -41,7 +41,7 @@ export default async function AdminProgramasPage() {
               {p.episodios.map((e) => (
                 <div key={e.id} className="admin__eprow">
                   <span>{e.nombre}</span>
-                  <span>{e.contenido.tipo === "archivo" ? "Archivo" : "SoundCloud"}</span>
+                  <span>{e.contenido.tipo === "archivo" ? "Archivo" : "Spotify"}</span>
                 </div>
               ))}
             </div>

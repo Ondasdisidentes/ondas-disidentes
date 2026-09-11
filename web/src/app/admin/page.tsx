@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/data/auth";
-import { IconMic, IconPeople, IconBroadcast, IconMail } from "./icons";
+import { IconMic, IconPeople, IconBroadcast, IconMail, IconEstilos } from "./icons";
 
 const SECCIONES = [
   {
@@ -26,6 +26,12 @@ const SECCIONES = [
     label: "Contacto",
     desc: "Email, teléfono y redes sociales del sitio.",
     Icon: IconMail,
+  },
+  {
+    href: "/admin/estilos",
+    label: "Estilos",
+    desc: "Frases de la cinta que se mueve debajo del hero.",
+    Icon: IconEstilos,
   },
 ];
 

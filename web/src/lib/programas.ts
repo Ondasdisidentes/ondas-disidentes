@@ -4,7 +4,7 @@
 
 export type ContenidoEpisodio =
   | { tipo: "archivo"; nombreArchivo: string; url: string }
-  | { tipo: "soundcloud"; url: string };
+  | { tipo: "spotify"; url: string };
 
 export type Episodio = {
   id: string;

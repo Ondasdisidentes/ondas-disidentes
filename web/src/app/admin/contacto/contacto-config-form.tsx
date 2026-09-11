@@ -10,7 +10,7 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
   const [telefono, setTelefono] = useState(config.telefono);
   const [instagram, setInstagram] = useState(config.instagram);
   const [facebook, setFacebook] = useState(config.facebook);
-  const [soundcloud, setSoundcloud] = useState(config.soundcloud);
+  const [spotify, setSpotify] = useState(config.spotify);
   const [tiktok, setTiktok] = useState(config.tiktok);
   const [youtube, setYoutube] = useState(config.youtube);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
     formData.set("telefono", telefono.trim());
     formData.set("instagram", instagram.trim());
     formData.set("facebook", facebook.trim());
-    formData.set("soundcloud", soundcloud.trim());
+    formData.set("spotify", spotify.trim());
     formData.set("tiktok", tiktok.trim());
     formData.set("youtube", youtube.trim());
 
@@ -98,12 +98,12 @@ export function ContactoConfigForm({ config }: { config: ContactoConfig }) {
         </label>
 
         <label className="admin__field">
-          <span>SoundCloud</span>
+          <span>Spotify</span>
           <input
             type="url"
-            value={soundcloud}
-            onChange={(e) => setSoundcloud(e.target.value)}
-            placeholder="https://soundcloud.com/ondasdisidentes"
+            value={spotify}
+            onChange={(e) => setSpotify(e.target.value)}
+            placeholder="https://open.spotify.com/show/ondasdisidentes"
           />
         </label>
 

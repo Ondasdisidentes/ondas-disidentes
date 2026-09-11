@@ -158,7 +158,7 @@ export function EditorPrograma({
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: ".8rem", flex: "none" }}>
                     <span className="admin__ep-list-tag">
-                      {e.contenido.tipo === "archivo" ? "Archivo" : "SoundCloud"}
+                      {e.contenido.tipo === "archivo" ? "Archivo" : "Spotify"}
                     </span>
                     <button
                       type="button"

@@ -11,6 +11,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: "#F4F4EF",
+  // Sin esto, navegadores Chromium (Opera incluido) con "oscurecer páginas
+  // web" activado (por tema oscuro del SO, o a mano) heurísticamente
+  // repintan el fondo hueso (--paper) como gris oscuro, aunque el CSS lo
+  // declare explícito. Este meta le avisa al navegador que el sitio ya es
+  // de tema claro y no necesita ese repintado.
+  colorScheme: "light",
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ export type ContactoConfig = {
   telefono: string;
   instagram: string;
   facebook: string;
-  soundcloud: string;
+  spotify: string;
   tiktok: string;
   youtube: string;
 };
@@ -16,7 +16,7 @@ const CONFIG_VACIA: ContactoConfig = {
   telefono: "",
   instagram: "",
   facebook: "",
-  soundcloud: "",
+  spotify: "",
   tiktok: "",
   youtube: "",
 };
@@ -25,7 +25,7 @@ export async function getContactoConfig(): Promise<ContactoConfig> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("configuracion_contacto")
-    .select("email, telefono, instagram, facebook, soundcloud, tiktok, youtube")
+    .select("email, telefono, instagram, facebook, spotify, tiktok, youtube")
     .eq("id", true)
     .maybeSingle();
 
@@ -37,7 +37,7 @@ export async function getContactoConfig(): Promise<ContactoConfig> {
     telefono: data.telefono ?? "",
     instagram: data.instagram ?? "",
     facebook: data.facebook ?? "",
-    soundcloud: data.soundcloud ?? "",
+    spotify: data.spotify ?? "",
     tiktok: data.tiktok ?? "",
     youtube: data.youtube ?? "",
   };

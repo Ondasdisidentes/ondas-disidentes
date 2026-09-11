@@ -158,6 +158,23 @@
 .admin__field input[readonly]{background:var(--paper-2); color:var(--mut); cursor:text;}
 .admin__field input[readonly]:focus{color:var(--ink); border-color:var(--ink);}
 
+/* Vista previa de la cinta en /admin/estilos — mismo tratamiento visual que
+   .ticker/.ticker__t en ondas.css (fondo lima, texto ink, mayúsculas), pero
+   con clases propias para no acoplar el admin al CSS del sitio público. */
+.admin__ticker-preview{
+  overflow:hidden; white-space:nowrap; background:var(--lime); color:var(--ink);
+  border:2px solid var(--ink); padding:.5rem 0; margin-top:.4rem;
+}
+.admin__ticker-preview-track{
+  display:inline-block; will-change:transform; animation:admin-ticker-slide 22s linear infinite;
+  font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; font-weight:700;
+}
+.admin__ticker-preview-track i{font-style:normal; padding-inline:.7em;}
+@keyframes admin-ticker-slide{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@media (prefers-reduced-motion: reduce){
+  .admin__ticker-preview-track{animation:none !important;}
+}
+
 .admin__copyfield{position:relative;}
 .admin__copyfield input{padding-right:2.6rem;}
 .admin__copybtn{

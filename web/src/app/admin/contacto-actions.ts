@@ -26,7 +26,7 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
   const telefono = String(formData.get("telefono") ?? "").trim();
   const instagram = String(formData.get("instagram") ?? "").trim();
   const facebook = String(formData.get("facebook") ?? "").trim();
-  const soundcloud = String(formData.get("soundcloud") ?? "").trim();
+  const spotify = String(formData.get("spotify") ?? "").trim();
   const tiktok = String(formData.get("tiktok") ?? "").trim();
   const youtube = String(formData.get("youtube") ?? "").trim();
 
@@ -42,8 +42,8 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
   if (facebook && !urlValida(facebook)) {
     return { error: "El link de Facebook debe ser una URL https válida." };
   }
-  if (soundcloud && !urlValida(soundcloud)) {
-    return { error: "El link de SoundCloud debe ser una URL https válida." };
+  if (spotify && !urlValida(spotify)) {
+    return { error: "El link de Spotify debe ser una URL https válida." };
   }
   if (tiktok && !urlValida(tiktok)) {
     return { error: "El link de TikTok debe ser una URL https válida." };
@@ -60,7 +60,7 @@ export async function actualizarConfigContacto(formData: FormData): Promise<Acti
       telefono: telefono || null,
       instagram: instagram || null,
       facebook: facebook || null,
-      soundcloud: soundcloud || null,
+      spotify: spotify || null,
       tiktok: tiktok || null,
       youtube: youtube || null,
       updated_at: new Date().toISOString(),
