@@ -175,6 +175,41 @@
   .admin__ticker-preview-track{animation:none !important;}
 }
 
+/* Vista previa del carrusel de galería en /admin/estilos — mismo
+   tratamiento visual que .galeria y .galeria__item en ondas.css (a todo el
+   ancho disponible, sin gap entre fotos, tira de varias fotos en modo
+   flechas), con clases propias por el mismo motivo que
+   admin__ticker-preview de arriba. */
+.admin__galeria-preview-item{flex:none; position:relative; overflow:hidden; transition:transform .15s ease, box-shadow .15s ease;}
+
+.admin__galeria-preview--auto{overflow:hidden; border:2px solid var(--ink); background:var(--paper); margin-top:.4rem;}
+.admin__galeria-preview-track{display:flex; will-change:transform; animation-name:admin-galeria-slide; animation-timing-function:linear; animation-iteration-count:infinite;}
+.admin__galeria-preview--auto:hover .admin__galeria-preview-track{animation-play-state:paused;}
+.admin__galeria-preview--auto .admin__galeria-preview-item{width:90px; aspect-ratio:1/1;}
+@keyframes admin-galeria-slide{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+.admin__galeria-preview--manual{border:2px solid var(--ink); background:var(--paper); margin-top:.4rem;}
+.admin__galeria-preview-strip{position:relative; min-height:90px;}
+.admin__galeria-preview-viewport{overflow:hidden; display:flex;}
+.admin__galeria-preview-viewport-row{display:flex;}
+.admin__galeria-preview-viewport-row.is-centrado{flex:1; justify-content:center;}
+.admin__galeria-preview--manual .admin__galeria-preview-item{width:90px; aspect-ratio:1/1;}
+.admin__galeria-preview--manual .admin__galeria-preview-item:hover{transform:scale(1.05); box-shadow:4px 4px 0 var(--ink); z-index:2;}
+.admin__galeria-preview-arrow{
+  position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+  border:none; background:none; padding:.4rem .5rem; margin:0;
+  color:var(--paper); font-size:1.4rem; line-height:1;
+  text-shadow:0 0 4px rgba(0,0,0,.85), 0 0 10px rgba(0,0,0,.55);
+  cursor:pointer; transition:transform .12s, opacity .12s;
+}
+.admin__galeria-preview-arrow--prev{left:0;}
+.admin__galeria-preview-arrow--next{right:0;}
+.admin__galeria-preview-arrow:hover:not(:disabled){transform:translateY(-50%) scale(1.15);}
+.admin__galeria-preview-arrow:disabled{opacity:.3; cursor:default;}
+@media (prefers-reduced-motion: reduce){
+  .admin__galeria-preview-track{animation:none !important;}
+}
+
 .admin__copyfield{position:relative;}
 .admin__copyfield input{padding-right:2.6rem;}
 .admin__copybtn{
@@ -198,6 +233,15 @@
 .admin__ep-hd span{font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--mut);}
 .admin__ep-remove{font-size:.62rem; letter-spacing:.05em; text-transform:uppercase; font-weight:700; color:var(--mut); text-decoration:underline;}
 .admin__ep-remove:hover{color:var(--indigo);}
+
+/* tabla de la galería (/admin/estilos, tab "Galería") */
+.admin__table{width:100%; border-collapse:collapse; font-size:.82rem; margin-top:1rem;}
+.admin__table th{
+  text-align:left; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  color:var(--mut); padding:.5rem .6rem; border-bottom:2px solid var(--ink);
+}
+.admin__table td{padding:.5rem .6rem; border-bottom:2px solid var(--paper-2); vertical-align:middle;}
+.admin__table tr:last-child td{border-bottom:none;}
 
 .admin__toggle{display:flex; gap:.5rem; margin-top:.3rem;}
 .admin__toggle button{

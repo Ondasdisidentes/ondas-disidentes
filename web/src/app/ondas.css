@@ -19,6 +19,49 @@
 
   @keyframes blink{50%{opacity:0;}}
 
+  /* ================= PREPÁGINA (gate + boot) =================
+     Animación de entrada tomada de docs/ondas-disidentes-base.html (el
+     HTML de referencia del proyecto) — se ve una vez por sesión de
+     navegador, no en cada visita a la home (ver entrada-gate.tsx). El
+     .boot se renderiza condicionalmente desde React, así que no necesita
+     su propio display:none/.on como en el HTML de referencia (vainilla). */
+  .gate{
+    position:fixed; inset:0; z-index:100; background:var(--paper); color:var(--ink);
+    display:flex; flex-direction:column; padding:clamp(.9rem,3vw,1.6rem);
+    transition:opacity .45s ease;
+  }
+  .gate.go{opacity:0; pointer-events:none;}
+  .gate__top, .gate__bot{display:flex; justify-content:space-between; gap:.6rem 1.2rem; flex-wrap:wrap; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; font-weight:700; color:var(--mut);}
+  .gate__top time{color:var(--ink); font-variant-numeric:tabular-nums;}
+  .gate__top-r{text-align:right;}
+  .gate__mid{
+    flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:1.5rem; text-align:center;
+    border-block:2px solid var(--ink); margin:clamp(.8rem,2vw,1.2rem) 0; padding:clamp(1.2rem,4vw,2.6rem);
+  }
+  .gate__status{display:inline-flex; align-items:center; gap:.6rem; border:2px solid var(--indigo); color:var(--indigo); padding:.4rem .85rem; font-size:.66rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700;}
+  .gate__sq{width:9px; height:9px; background:var(--indigo); animation:blink 1.4s steps(1) infinite;}
+  /* En vivo: mismo verde/lima que .player__livedot en el resto del sitio.
+     El cuadrado deja de titilar (era "buscando señal"; encontrada, queda
+     fijo) — combina con "Señal adquirida" del boot. */
+  .gate__status--live{border-color:var(--lime); color:var(--ink);}
+  .gate__status--live .gate__sq{background:var(--lime); animation:none;}
+  .gate__wave{width:min(620px,84%); height:auto;}
+  .gate__play{
+    display:inline-flex; align-items:center; gap:.9rem;
+    background:var(--ink); color:var(--paper); border:2px solid var(--ink);
+    padding:.95rem 1.7rem;
+    font-size:clamp(.8rem,2.2vw,1rem); letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+    transition:transform .1s, background .12s, border-color .12s; cursor:pointer;
+  }
+  .gate__play:hover{background:var(--indigo); border-color:var(--indigo);}
+  .gate__play:active{transform:translate(2px,2px);}
+
+  .boot{position:fixed; inset:0; background:var(--indigo); color:var(--paper); z-index:110; display:flex; padding:clamp(1rem,5vw,3rem); flex-direction:column; justify-content:center; gap:.55rem;}
+  .boot p{margin:0; font-weight:700; font-size:clamp(.74rem,2vw,.95rem); letter-spacing:.12em; text-transform:uppercase; opacity:0; color:var(--lav);}
+  .boot p.show{opacity:1;}
+  .boot p.boot__ok{color:var(--paper);}
+  .boot p.boot__air{color:var(--lime); font-family:var(--f-tit); font-size:clamp(1.2rem,3.4vw,1.7rem); letter-spacing:.06em;}
+
   /* ================= HOME (ventanas) ================= */
   #home{position:fixed; inset:0; z-index:50; background:var(--paper); flex-direction:column;}
 
@@ -127,6 +170,45 @@
   .ticker__t{display:inline-block; will-change:transform; animation:slide 40s linear infinite; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; font-weight:700;}
   .ticker__t i{font-style:normal; padding-inline:.7em;}
   @keyframes slide{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+  /* galería (entre la cinta y "Últimos episodios") — portadas de programas
+     y grillas que el admin va rotando semana a semana. Todas las fotos con
+     el mismo alto/ancho vía aspect-ratio+cover, sin gap entre ellas. Tamaño
+     pensado para que entren ~4 a la vez en desktop (con un asomo de la
+     siguiente, que insinúa que hay más) y para que se vea bien aunque haya
+     pocas: en automático se repiten (es lo esperable en una cinta que
+     loopea); en flechas NO se repiten si son pocas — se centran, porque acá
+     cada foto es contenido real y repetirla se leería como un error. */
+  .galeria__item{flex:none; position:relative; overflow:hidden; transition:transform .15s ease, box-shadow .15s ease;}
+  .galeria__item img{width:100%; height:100%; object-fit:cover; display:block;}
+
+  .galeria--auto{overflow:hidden; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); background:var(--paper-2);}
+  .galeria--auto .galeria__track{display:flex; will-change:transform; animation-name:slide; animation-timing-function:linear; animation-iteration-count:infinite;}
+  .galeria--auto:hover .galeria__track{animation-play-state:paused;}
+  .galeria--auto .galeria__item{width:clamp(200px,24vw,320px); aspect-ratio:1/1;}
+
+  /* modo flechas: tira de varias fotos a la vez (no una sola), el visitante
+     la desplaza de a una — las flechas flotan encima de las fotos, sin caja
+     ni fondo propios: solo el glifo, con sombra de texto para que se lea
+     sobre cualquier foto (clara u oscura) de abajo. */
+  .galeria--manual{border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); background:var(--paper-2);}
+  .galeria__strip{position:relative; min-height:clamp(200px,24vw,320px);}
+  .galeria__viewport{overflow:hidden; display:flex;}
+  .galeria__row{display:flex;}
+  .galeria__row--centrado{flex:1; justify-content:center;}
+  .galeria--manual .galeria__item{width:clamp(200px,24vw,320px); aspect-ratio:1/1;}
+  .galeria--manual .galeria__item:hover{transform:scale(1.04); box-shadow:6px 6px 0 var(--ink); z-index:2;}
+  .galeria__arrow{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+    border:none; background:none; padding:.9rem 1rem; margin:0;
+    color:var(--paper); font-size:clamp(2.2rem,5vw,3.2rem); line-height:1;
+    text-shadow:0 0 6px rgba(0,0,0,.85), 0 0 16px rgba(0,0,0,.55);
+    cursor:pointer; transition:transform .12s, opacity .12s;
+  }
+  .galeria__arrow--prev{left:0;}
+  .galeria__arrow--next{right:0;}
+  .galeria__arrow:hover:not(:disabled){transform:translateY(-50%) scale(1.15);}
+  .galeria__arrow:disabled{opacity:.3; cursor:default;}
 
   /* últimos programas */
   .seq{display:flex; align-items:center; gap:1rem; padding:clamp(1.2rem,3vw,1.8rem) clamp(.9rem,3vw,1.6rem) .4rem;}
@@ -499,6 +581,6 @@
     .player__seek::-moz-range-thumb{width:0; height:0; border:none; background:transparent;}
   }
   @media (prefers-reduced-motion:reduce){
-    .ticker__t, .player__livedot{animation:none !important;}
+    .ticker__t, .player__livedot, .galeria--auto .galeria__track, .gate__sq{animation:none !important;}
     *{transition:none !important;}
   }

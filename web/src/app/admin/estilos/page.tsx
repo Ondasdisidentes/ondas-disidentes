@@ -1,10 +1,11 @@
 import { verifyAdminSession } from "@/lib/data/auth";
 import { getEstilosConfig } from "@/lib/data/estilos";
-import { EstilosConfigForm } from "./estilos-config-form";
+import { getGaleriaImagenes } from "@/lib/data/galeria";
+import { EstilosTabs } from "./estilos-tabs";
 
 export default async function AdminEstilosPage() {
   await verifyAdminSession();
-  const config = await getEstilosConfig();
+  const [config, imagenesGaleria] = await Promise.all([getEstilosConfig(), getGaleriaImagenes()]);
 
-  return <EstilosConfigForm config={config} />;
+  return <EstilosTabs config={config} imagenesGaleria={imagenesGaleria} />;
 }

@@ -5,7 +5,10 @@ import "./ondas.css";
 import type { Programa } from "@/lib/programas";
 import type { Radialista } from "@/lib/radialistas";
 import type { ContactoConfig } from "@/lib/data/contacto";
-import type { EstilosConfig } from "@/lib/data/estilos";
+import type { EstilosConfig } from "@/lib/estilos";
+import type { ImagenGaleria } from "@/lib/galeria";
+import GaleriaCarrusel from "./galeria-carrusel";
+import EntradaGate from "./entrada-gate";
 
 function cx(...parts: Array<string | false | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -103,11 +106,13 @@ export default function HomeClient({
   radialistas,
   contacto,
   estilos,
+  galeriaImagenes,
 }: {
   programas: Programa[];
   radialistas: Radialista[];
   contacto: ContactoConfig;
   estilos: EstilosConfig;
+  galeriaImagenes: ImagenGaleria[];
 }) {
   // Si el admin no cargó un dato en /admin/contacto, se muestra igual como
   // placeholder (label genérica, opacidad reducida vía "is-disabled") en vez
@@ -368,6 +373,7 @@ export default function HomeClient({
 
   return (
     <>
+      <EntradaGate enVivo={isLive} />
       {streamUrl && (
         <audio ref={audioRef} src={streamUrl} preload="none" onError={() => setReproduciendo(false)} />
       )}
@@ -465,6 +471,8 @@ export default function HomeClient({
               <div className={"ticker"} aria-hidden="true">
                 <div className={"ticker__t"}>{tickerText}</div>
               </div>
+
+              <GaleriaCarrusel imagenes={galeriaImagenes} modo={estilos.galeriaModo} />
 
               <div className={"seq"}>
                 <img className={"seq__heading"} src="/images/ultimos-episodios-heading.png" alt="Últimos episodios" />
