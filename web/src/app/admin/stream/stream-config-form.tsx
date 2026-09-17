@@ -55,7 +55,6 @@ function CampoIcecast({ label, value }: { label: string; value: string }) {
 }
 
 export function StreamConfigForm({ config }: { config: StreamConfig }) {
-  const [statusUrl, setStatusUrl] = useState(config.statusUrl);
   const [mount, setMount] = useState(config.mount);
   const [streamUrl, setStreamUrl] = useState(config.streamUrl);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +67,6 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
     setEnviando(true);
 
     const formData = new FormData();
-    formData.set("statusUrl", statusUrl.trim());
     formData.set("mount", mount.trim());
     formData.set("streamUrl", streamUrl.trim());
 
@@ -100,21 +98,11 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
         </p>
 
         <label className="admin__field">
-          <span>URL de estado (status-json.xsl)</span>
-          <input
-            type="url"
-            value={statusUrl}
-            onChange={(e) => setStatusUrl(e.target.value)}
-            placeholder="https://giss.tv:667/status-json.xsl"
-          />
-        </label>
-
-        <label className="admin__field">
           <span>Mount point</span>
           <input
             value={mount}
             onChange={(e) => setMount(e.target.value)}
-            placeholder="/OndasDisidentes.mp3"
+            placeholder="/laboratoriosur.ogg"
           />
         </label>
 
@@ -124,8 +112,14 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
             type="url"
             value={streamUrl}
             onChange={(e) => setStreamUrl(e.target.value)}
-            placeholder="https://giss.tv:667/OndasDisidentes.mp3"
+            placeholder="https://giss.tv:666/laboratoriosur.ogg"
           />
+          <p className="admin__hint" style={{ display: "block", marginTop: ".3rem" }}>
+            La URL completa que te da Giss para escuchar el stream, con puerto incluido — ej.{" "}
+            <code>https://giss.tv:666/laboratoriosur.ogg</code>. El chequeo de &quot;¿está en vivo?&quot;
+            se arma solo a partir de esta URL (mismo servidor y puerto, agregando{" "}
+            <code>/status-json.xsl</code> al final) — no hace falta cargarlo aparte.
+          </p>
         </label>
 
         {error && <p className="admin__error">{error}</p>}
@@ -151,17 +145,17 @@ export function StreamConfigForm({ config }: { config: StreamConfig }) {
 
         <div className="admin__row">
           <CampoIcecast label="Server" value="giss.tv" />
-          <CampoIcecast label="Port" value="8001" />
+          <CampoIcecast label="Port" value="8000" />
         </div>
 
         <div className="admin__row">
-          <CampoIcecast label="Mountpoint" value="ondasdisidentes.mp3" />
+          <CampoIcecast label="Mountpoint" value="laboratoriosur.ogg" />
           <CampoIcecast label="User" value="source" />
         </div>
 
-        <CampoIcecast label="Password" value="1bcwr" />
-        <CampoIcecast label="URL (http)" value="http://giss.tv:8001/ondasdisidentes.mp3" />
-        <CampoIcecast label="URL (https)" value="https://giss.tv:667/ondasdisidentes.mp3" />
+        <CampoIcecast label="Password" value="f37yc" />
+        <CampoIcecast label="URL (http)" value="http://giss.tv:8000/laboratoriosur.ogg" />
+        <CampoIcecast label="URL (https)" value="https://giss.tv:666/laboratoriosur.ogg" />
       </div>
     </div>
   );

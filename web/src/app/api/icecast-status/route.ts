@@ -2,14 +2,13 @@
 // para saber si el mount de Ondas Disidentes está transmitiendo. Se hace acá
 // (no desde el navegador) para evitar CORS. Ver docs/DOCUMENTO_MAESTRO.md §5.
 //
-// La configuración (status_url/mount/stream_url) vive en Supabase
-// (tabla configuracion_stream, editable desde /admin/stream) en vez de
-// variables de entorno, así el equipo puede actualizarla sin redeploy.
+// mount/stream_url viven en Supabase (tabla configuracion_stream, editable
+// desde /admin/stream) en vez de variables de entorno, así el equipo puede
+// actualizarla sin redeploy. statusUrl ya no es un campo propio — se deriva
+// de stream_url (ver derivarStatusUrl en @/lib/data/stream-config).
 
 import https from "node:https";
 import { getStreamConfig } from "@/lib/data/stream-config";
-
-type IcecastSource = { listenurl?: string; mount?: string };
 
 // giss.tv:667 no manda el certificado intermedio de Let's Encrypt en el
 // handshake TLS, solo el suyo propio (verificado a mano con
@@ -86,7 +85,7 @@ const giscastAgent = new https.Agent({
   ca: [LENCR_YE2_INTERMEDIATE, LENCR_YE_ROOT_CROSSSIGN, ISRG_ROOT_X2],
 });
 
-function fetchJson(url: string): Promise<unknown> {
+function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     https
       .get(url, { agent: giscastAgent }, (res) => {
@@ -99,16 +98,14 @@ function fetchJson(url: string): Promise<unknown> {
         let body = "";
         res.setEncoding("utf8");
         res.on("data", (chunk: string) => (body += chunk));
-        res.on("end", () => {
-          try {
-            resolve(JSON.parse(body));
-          } catch (err) {
-            reject(err);
-          }
-        });
+        res.on("end", () => resolve(body));
       })
       .on("error", reject);
   });
+}
+
+function escaparParaRegex(texto: string): string {
+  return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export async function GET() {
@@ -122,15 +119,20 @@ export async function GET() {
   const { statusUrl, mount, streamUrl } = config;
 
   try {
-    const data = (await fetchJson(statusUrl)) as {
-      icestats?: { source?: IcecastSource | IcecastSource[] };
-    };
-    const raw = data?.icestats?.source;
-    const sources: IcecastSource[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const body = await fetchText(statusUrl);
 
+    // status-json.xsl lista TODAS las radios de esa instancia de giss.tv,
+    // no solo la nuestra — y de tanto en tanto alguna de esas otras manda
+    // un título con caracteres que Icecast no escapa bien, lo que rompe el
+    // JSON del documento entero (visto en vivo: `"title": - ,` sin
+    // comillas). Si dependiéramos de JSON.parse() del documento completo,
+    // un dato corrupto de una radio ajena tumbaría nuestro propio chequeo.
+    // Por eso se busca el mount directo en el texto crudo, sin necesitar
+    // que TODO el documento sea JSON válido — más resiliente a algo que
+    // no controlamos.
     const live = mount
-      ? sources.some((s) => s.listenurl?.endsWith(mount) || s.mount === mount)
-      : sources.length > 0;
+      ? new RegExp(`"listenurl"\\s*:\\s*"[^"]*${escaparParaRegex(mount)}"`).test(body)
+      : body.includes('"listenurl"');
 
     return Response.json({ live, streamUrl });
   } catch {
