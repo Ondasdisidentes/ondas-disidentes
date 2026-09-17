@@ -45,7 +45,16 @@ function formatearHoraBolivia(): string {
   }
 }
 
-export default function EntradaGate({ enVivo }: { enVivo: boolean }) {
+export default function EntradaGate({
+  enVivo,
+  onSintonizar,
+}: {
+  enVivo: boolean;
+  // Arranca el audio en vivo — la llama "Sintonizar / Entrar" cuando hay
+  // transmisión, independientemente de si se ve el boot o se saltea por
+  // prefers-reduced-motion (ver entrar() más abajo).
+  onSintonizar?: () => void;
+}) {
   // Arranca visible tanto en el servidor como en el primer render del
   // cliente (tienen que coincidir para no romper la hidratación) — es el
   // caso correcto por defecto para una visita nueva. El layout effect de
@@ -108,6 +117,12 @@ export default function EntradaGate({ enVivo }: { enVivo: boolean }) {
     } catch {
       // no crítico
     }
+
+    // "Buscar si hay un en vivo reproduciendo": si la radio está al aire,
+    // arranca el audio ya mismo al sintonizar, en paralelo al boot — no
+    // depende de si el boot se ve o se saltea por reduced-motion. Si no
+    // hay transmisión, sigue el flujo normal sin tocar el reproductor.
+    if (enVivo) onSintonizar?.();
 
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {

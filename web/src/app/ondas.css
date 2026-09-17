@@ -72,7 +72,8 @@
     border-bottom:2px solid var(--ink); background:var(--paper);
     transition:background .3s ease, border-color .3s ease;
   }
-  .hbar__tag{color:var(--ink); display:inline-flex; align-items:center; gap:.4rem; transition:.12s;}
+  .hbar__tags{display:inline-flex; align-items:center; gap:.4rem;}
+  .hbar__tag{color:var(--ink); transition:.12s;}
   .hbar__tag:hover{color:var(--indigo);}
   .burger{display:flex; flex-direction:column; gap:4.5px; padding:.5rem .35rem;}
   .burger span{display:block; width:24px; height:3px; background:var(--ink); transition:.15s;}
@@ -135,6 +136,7 @@
 
   /* masthead */
   .mast{padding:clamp(.8rem,2vw,1.3rem) var(--gutter) 0;}
+  .mast__logo-btn{display:block; width:100%;}
   .mast__logo{display:block; margin:0 auto; width:min(100%,1100px); height:auto;}
 
   /* hero */

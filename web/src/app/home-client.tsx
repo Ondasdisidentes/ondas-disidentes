@@ -457,7 +457,7 @@ export default function HomeClient({
 
   return (
     <>
-      <EntradaGate enVivo={isLive} />
+      <EntradaGate enVivo={isLive} onSintonizar={reproducirEnVivo} />
       {streamUrl && (
         <audio
           ref={audioRef}
@@ -486,9 +486,19 @@ export default function HomeClient({
       {/* ============ HOME (ventanas) ============ */}
       <div id="home" style={{ display: mode === "home" ? "flex" : "none" }}>
         <div className={cx("hbar", menuOpen && "hbar--dark")}>
-          <button className={cx("hbar__tag", "lbl")} onClick={goHome}>
-            {isLive && "● En vivo · "}Radio alternativa
-          </button>
+          <div className={cx("hbar__tags", "lbl")}>
+            {isLive && (
+              <>
+                <button type="button" className={"hbar__tag"} onClick={() => openPrograma(-1)}>
+                  ● En vivo
+                </button>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <button type="button" className={"hbar__tag"} onClick={goHome}>
+              Radio alternativa
+            </button>
+          </div>
           <button
             className={"burger"}
             aria-expanded={menuOpen}
@@ -536,7 +546,9 @@ export default function HomeClient({
             {/* ventana: INICIO */}
             <section className={cx("win", activeWin === "inicio" && "on")}>
               <header className={"mast"}>
-                <img className={"mast__logo"} src="/images/ondas-disidentes-wordmark.svg" alt="Ondas Disidentes" />
+                <button type="button" className={"mast__logo-btn"} onClick={() => openPrograma(-1)}>
+                  <img className={"mast__logo"} src="/images/ondas-disidentes-wordmark.svg" alt="Ondas Disidentes" />
+                </button>
               </header>
 
               <section className={"hero"}>
@@ -895,9 +907,19 @@ export default function HomeClient({
       {/* ============ PROGRAMAS (consola) ============ */}
       <div id="prog" style={{ display: mode === "prog" ? "flex" : "none" }}>
         <div className={cx("hbar", menuOpen && "hbar--dark")}>
-          <button className={cx("hbar__tag", "lbl")} onClick={goHome}>
-            {isLive && "● En vivo · "}Radio alternativa
-          </button>
+          <div className={cx("hbar__tags", "lbl")}>
+            {isLive && (
+              <>
+                <button type="button" className={"hbar__tag"} onClick={() => setMenuOpen(false)}>
+                  ● En vivo
+                </button>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <button type="button" className={"hbar__tag"} onClick={goHome}>
+              Radio alternativa
+            </button>
+          </div>
           <button
             className={"burger"}
             aria-expanded={menuOpen}
