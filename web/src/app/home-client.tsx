@@ -56,6 +56,14 @@ type Reproduccion =
   | { tipo: "vivo" }
   | { tipo: "grabacion"; programaIdx: number; episodioIdx: number };
 
+// Cuántos reintentos de reconexión automática hace el reproductor en vivo
+// ante un corte de red del lado del oyente, antes de rendirse y mostrar
+// "pausado" — un stream continuo largo se corta de vez en cuando por wifi/
+// datos del oyente aunque la transmisión en sí siga perfecta, y antes eso
+// dejaba el reproductor apagado para siempre sin avisar.
+const MAX_REINTENTOS_VIVO = 3;
+const REINTENTO_VIVO_MS = 2500;
+
 // Recuerda en qué sección se quedó el usuario (no qué está sonando: eso se
 // resetea en cada visita, como cualquier reproductor) para restaurarla si
 // recarga la página. Solo dura la pestaña/sesión — no localStorage.
@@ -156,6 +164,13 @@ export default function HomeClient({
   const [reproduciendo, setReproduciendo] = useState(false);
   const [recTiempo, setRecTiempo] = useState({ actual: 0, duracion: 0 });
   const [vivoTiempo, setVivoTiempo] = useState(0);
+  // Estado real del <audio> en vivo, reflejado directo de sus propios
+  // eventos (no algo que asumimos nosotros al llamar .play()) — "detenido"
+  // es la única señal confiable de "no se escucha nada", en vez de una
+  // corazonada. reproduciendo (arriba) sigue siendo la INTENCIÓN del
+  // usuario (quiere escuchar sí/no); esto es lo que el audio realmente
+  // está haciendo con esa intención.
+  const [estadoVivo, setEstadoVivo] = useState<"detenido" | "conectando" | "reproduciendo">("detenido");
 
   const winwrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -163,6 +178,53 @@ export default function HomeClient({
   const recAudioRef = useRef<HTMLAudioElement>(null);
 
   const { live: isLive, streamUrl } = useLiveStatus();
+
+  // Espejo en refs de reproduccion/reproduciendo, legible desde el
+  // setTimeout del reintento de abajo sin quedarse con el valor de cuando
+  // se programó — para en ese momento chequear si el usuario ya pausó a
+  // mano o cambió a otra cosa mientras tanto.
+  const reproduccionRef = useRef(reproduccion);
+  const reproduciendoRef = useRef(reproduciendo);
+  useEffect(() => {
+    reproduccionRef.current = reproduccion;
+    reproduciendoRef.current = reproduciendo;
+  }, [reproduccion, reproduciendo]);
+  const vivoReintentosRef = useRef(0);
+  const vivoReintentoTimeoutRef = useRef<number | null>(null);
+
+  // Único lugar del código que llama audio.play() para el stream en vivo
+  // — tanto el intento inicial como cada reintento pasan por acá, así la
+  // UI (estadoVivo) refleja siempre la misma señal real en vez de dos
+  // caminos que podían desincronizarse entre sí.
+  function intentarReproducirVivo() {
+    const el = audioRef.current;
+    if (!el) return;
+    setEstadoVivo("conectando");
+    el.play().catch(() => programarReintentoVivo());
+  }
+
+  // Ante una falla (el intento inicial de conectar, o un corte de red a
+  // mitad de reproducción — para el oyente, no para la transmisión)
+  // reintenta reconectar unas pocas veces con una breve espera, en vez de
+  // rendirse al primer tropiezo. Si se agotan los reintentos, recién ahí
+  // se refleja como detenido de verdad — no antes, y no con una excusa
+  // distinta según por dónde vino la falla.
+  function programarReintentoVivo() {
+    if (vivoReintentosRef.current >= MAX_REINTENTOS_VIVO) {
+      vivoReintentosRef.current = 0;
+      setEstadoVivo("detenido");
+      setReproduciendo(false);
+      return;
+    }
+    vivoReintentosRef.current += 1;
+    vivoReintentoTimeoutRef.current = window.setTimeout(() => {
+      if (reproduccionRef.current?.tipo !== "vivo" || !reproduciendoRef.current) return;
+      const el = audioRef.current;
+      if (!el) return;
+      el.load();
+      intentarReproducirVivo();
+    }, REINTENTO_VIVO_MS);
+  }
 
   // Restaura la sección donde se quedó el usuario antes de un refresh, y
   // recién ahí habilita el render real (ver el guard de "!hidratado" más
@@ -213,15 +275,31 @@ export default function HomeClient({
     }
   }, [mode, activeWin, currentPrograma, currentEpisodio]);
 
+  // El setEstadoVivo("detenido") del else de abajo es sincronizar React con
+  // el <audio> (sistema externo) justo después de pausarlo nosotros mismos
+  // — mismo caso legítimo que el resto de los efectos de sync de este
+  // archivo (ver el de sessionStorage más arriba), no un derivado que se
+  // pueda calcular sin el efecto.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
     if (reproduccion?.tipo === "vivo" && reproduciendo) {
-      el.play().catch(() => setReproduciendo(false));
+      intentarReproducirVivo();
     } else {
+      if (vivoReintentoTimeoutRef.current !== null) {
+        window.clearTimeout(vivoReintentoTimeoutRef.current);
+        vivoReintentoTimeoutRef.current = null;
+      }
+      vivoReintentosRef.current = 0;
       el.pause();
+      setEstadoVivo("detenido");
     }
+    // intentarReproducirVivo no depende de nada reactivo propio (solo de
+    // audioRef, estable) — llamarla acá no necesita ir en las deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reproduccion, reproduciendo]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const el = recAudioRef.current;
@@ -234,10 +312,10 @@ export default function HomeClient({
   }, [reproduccion, reproduciendo]);
 
   useEffect(() => {
-    if (!(reproduccion?.tipo === "vivo" && reproduciendo)) return;
+    if (estadoVivo !== "reproduciendo") return;
     const id = setInterval(() => setVivoTiempo((t) => t + 1), 1000);
     return () => clearInterval(id);
-  }, [reproduccion, reproduciendo]);
+  }, [estadoVivo]);
 
   useEffect(() => {
     winwrapRef.current?.scrollTo(0, 0);
@@ -275,7 +353,13 @@ export default function HomeClient({
       setProgListaAbierta(true);
     }
     setMode("prog");
-    if (autoplay) reproducirEnVivo();
+    // La sección Programas siempre debería estar escuchando algo: si no hay
+    // nada sonando todavía (ni en vivo ni una grabación puntual) y la radio
+    // está en vivo, arranca el vivo solo al entrar — sea por acá (CTA del
+    // home), por el link "Programas" del menú, o por "ver todos". Si ya
+    // hay algo sonando (por ejemplo, el usuario está escuchando una
+    // grabación y vuelve a este catálogo), no lo interrumpe.
+    if (autoplay || (isLive && !reproduccion)) reproducirEnVivo();
   }
 
   function selectEpisodio(programaIdx: number, episodioIdx: number) {
@@ -375,7 +459,17 @@ export default function HomeClient({
     <>
       <EntradaGate enVivo={isLive} />
       {streamUrl && (
-        <audio ref={audioRef} src={streamUrl} preload="none" onError={() => setReproduciendo(false)} />
+        <audio
+          ref={audioRef}
+          src={streamUrl}
+          preload="none"
+          onPlaying={() => {
+            vivoReintentosRef.current = 0;
+            setEstadoVivo("reproduciendo");
+          }}
+          onWaiting={() => setEstadoVivo("conectando")}
+          onError={programarReintentoVivo}
+        />
       )}
       {audioUrlReproduccion && (
         <audio
@@ -995,11 +1089,20 @@ export default function HomeClient({
                   type="button"
                   className={"player__toggle"}
                   onClick={() => setReproduciendo((v) => !v)}
-                  aria-label={reproduciendo ? "Pausar" : "Reproducir"}
+                  aria-label={
+                    estadoVivo === "reproduciendo"
+                      ? "Pausar"
+                      : estadoVivo === "conectando"
+                        ? "Conectando…"
+                        : "Reproducir"
+                  }
                 >
-                  {reproduciendo ? "‖" : "►"}
+                  {estadoVivo === "reproduciendo" ? "‖" : estadoVivo === "conectando" ? "…" : "►"}
                 </button>
-                <span className={cx("player__livedot", !reproduciendo && "off")} aria-hidden="true" />
+                {/* El punto solo se prende con confirmación real (evento "playing" del
+                    <audio>, vía estadoVivo) — no con la sola intención de reproducir, para
+                    no mostrar "en vivo" cuando en realidad no está sonando nada. */}
+                <span className={cx("player__livedot", estadoVivo !== "reproduciendo" && "off")} aria-hidden="true" />
                 <span className={"player__livelbl"}>En vivo</span>
                 <span className={"player__time"}>{formatearTiempo(vivoTiempo)}</span>
               </div>
