@@ -21,13 +21,58 @@ import { getStreamConfig } from "@/lib/data/stream-config";
 // degradando el chequeo a "no en vivo" siempre, transmita o no.
 //
 // Esto agrega como confianza extra, solo para esta conexión puntual, los
-// dos certificados intermedios que el servidor debería mandar y no manda.
+// certificados intermedios que el servidor debería mandar y no manda.
 // No desactiva la verificación TLS: la cadena sigue teniendo que cerrar en
 // una raíz real (ISRG Root X2, que Node ya trae de fábrica) para que la
 // conexión se acepte. Certificados públicos, sin datos sensibles —
 // descargados de la propia Authority Information Access de cada uno:
-//   http://ye2.i.lencr.org/ — intermedio que firma el certificado de giss.tv
+//   http://ye1.i.lencr.org/ — intermedios de Let's Encrypt (generación Y,
+//   http://ye2.i.lencr.org/   ECDSA) que pueden firmar el certificado de
+//   http://ye3.i.lencr.org/   giss.tv
 //   http://ye.i.lencr.org/  — cross-sign de esa CA hacia ISRG Root X2
+//
+// Por qué están los tres (YE1, YE2, YE3) y no solo el que firma hoy: Let's
+// Encrypt rota entre ellos en cada renovación (cada ~60-90 días). Esto ya
+// rompió el chequeo una vez: giss.tv renovó el 26-sep-2026, pasó de YE2 a
+// YE1, y con solo YE2 acá el handshake fallaba y el sitio mostraba "no en
+// vivo" siempre. Si algún día el handshake vuelve a fallar con
+// "unable to verify the first certificate", revisar primero el emisor con
+// `openssl s_client -connect giss.tv:666 -servername giss.tv` (línea
+// "i:") y sumar el intermedio nuevo desde su AIA.
+const LENCR_YE1_INTERMEDIATE = `-----BEGIN CERTIFICATE-----
+MIICizCCAhGgAwIBAgIQXd1w3TH4AchcGGp6BLgK/jAKBggqhkjOPQQDAzAuMQsw
+CQYDVQQGEwJVUzENMAsGA1UEChMESVNSRzEQMA4GA1UEAxMHUm9vdCBZRTAeFw0y
+NTA5MDMwMDAwMDBaFw0yODA5MDIyMzU5NTlaMDMxCzAJBgNVBAYTAlVTMRYwFAYD
+VQQKEw1MZXQncyBFbmNyeXB0MQwwCgYDVQQDEwNZRTEwdjAQBgcqhkjOPQIBBgUr
+gQQAIgNiAAQHZVB1/mimla2hfSurylScjPMZaOJXLz/NnAc2sylm8WDyhU9Ccp+z
+ASQi5vSwGGJjSGklkD9fdPR8GpyDIOIjCEfrnbt/v+ZSEPLLEGbaM6EccDbN7p9x
+teIm2Avf+ryjge4wgeswDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoGCCsGAQUF
+BwMBMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFLsgykcL/tflnPmPCSqj
+jDdFsbzYMB8GA1UdIwQYMBaAFKPIJlqOoUzQNWP8myPIOq5W809WMDIGCCsGAQUF
+BwEBBCYwJDAiBggrBgEFBQcwAoYWaHR0cDovL3llLmkubGVuY3Iub3JnLzATBgNV
+HSAEDDAKMAgGBmeBDAECATAnBgNVHR8EIDAeMBygGqAYhhZodHRwOi8veWUuYy5s
+ZW5jci5vcmcvMAoGCCqGSM49BAMDA2gAMGUCMQDgjUEahFT/h3DRakqiPZpLvPgf
+Zwkt6K2EOMmh1nvEzl83eMLYcod4GCl3b0J1Nn0CMBNYmEQJb4CEG5WoOe7aRn/L
+VKu6saHmHEynI7ysIPd8zQsK1HdmhlHKlw9Z5GpGvA==
+-----END CERTIFICATE-----`;
+
+const LENCR_YE3_INTERMEDIATE = `-----BEGIN CERTIFICATE-----
+MIICizCCAhGgAwIBAgIQLTM7c3DEJq+3k6hXVBAwZzAKBggqhkjOPQQDAzAuMQsw
+CQYDVQQGEwJVUzENMAsGA1UEChMESVNSRzEQMA4GA1UEAxMHUm9vdCBZRTAeFw0y
+NTA5MDMwMDAwMDBaFw0yODA5MDIyMzU5NTlaMDMxCzAJBgNVBAYTAlVTMRYwFAYD
+VQQKEw1MZXQncyBFbmNyeXB0MQwwCgYDVQQDEwNZRTMwdjAQBgcqhkjOPQIBBgUr
+gQQAIgNiAAS7HaCvDM9Y3aYPW+iH6uUTK2KFUYx0vye5xK1KNTWZUgloiW2budqz
+vCQaarmJTNujiV+ZrWrOpox+N4kTsiCec6yfw7VGmErLC5ZSq2X4d2vJc1g8VIU3
+fb7CuzJ/bDOjge4wgeswDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoGCCsGAQUF
+BwMBMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFPaiftZeI2/d3UVGYR6C
+FXXN8eaOMB8GA1UdIwQYMBaAFKPIJlqOoUzQNWP8myPIOq5W809WMDIGCCsGAQUF
+BwEBBCYwJDAiBggrBgEFBQcwAoYWaHR0cDovL3llLmkubGVuY3Iub3JnLzATBgNV
+HSAEDDAKMAgGBmeBDAECATAnBgNVHR8EIDAeMBygGqAYhhZodHRwOi8veWUuYy5s
+ZW5jci5vcmcvMAoGCCqGSM49BAMDA2gAMGUCMHD5+4lU6i9k7inE4Opkebs+IFjY
+jlD9BNaPyQe9/hBSjOOTaF5UZzlNy64JID6VUwIxANr7lTvWWzlGU1PpCR7lfDVX
+tmGgr3dPHkigUXaTWbbLrx84pOAdd3FEGJM2Kf5etA==
+-----END CERTIFICATE-----`;
+
 const LENCR_YE2_INTERMEDIATE = `-----BEGIN CERTIFICATE-----
 MIICjDCCAhGgAwIBAgIQTfOxXdbAeExQfNN7WObxFTAKBggqhkjOPQQDAzAuMQsw
 CQYDVQQGEwJVUzENMAsGA1UEChMESVNSRzEQMA4GA1UEAxMHUm9vdCBZRTAeFw0y
@@ -82,7 +127,13 @@ FfLn
 -----END CERTIFICATE-----`;
 
 const giscastAgent = new https.Agent({
-  ca: [LENCR_YE2_INTERMEDIATE, LENCR_YE_ROOT_CROSSSIGN, ISRG_ROOT_X2],
+  ca: [
+    LENCR_YE1_INTERMEDIATE,
+    LENCR_YE2_INTERMEDIATE,
+    LENCR_YE3_INTERMEDIATE,
+    LENCR_YE_ROOT_CROSSSIGN,
+    ISRG_ROOT_X2,
+  ],
 });
 
 function fetchText(url: string): Promise<string> {
